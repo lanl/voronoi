@@ -1,7 +1,7 @@
 ![](lanl.png)
 
-## VORONOI ##
-### Parallel Mesh Preprocessor for Subsurface Codes###
+### VORONOI ###
+#### Parallel Mesh Preprocessor for Subsurface Codes ####
 
 ---------------------------
 
