@@ -1,0 +1,81 @@
+#! /bin/csh -f
+#
+set voronoi="../../src/voronoi"
+
+rm mesh_* log_*
+rm hex_mesh_*
+#
+date;echo lagrit 2d mesh            ;lagrit < make_2d_meshes.lgi           > log_2d.outx3dgen
+date;echo lagrit octree mesh        ;lagrit < make_octree_meshes.lgi       > log_octree.outx3dgen
+date;echo lagrit tet5 tet6 mesh     ;lagrit < make_tet5_tet6_meshes.lgi    > log_tet5_tet6.outx3dgen
+date;echo lagrit high connectivity  ;lagrit < make_high_connectivity.lgi   > log_high_connectivity.outx3dgen
+date;echo lagrit smooth 2d          ;lagrit < make_smooth_2d.lgi           > log_smooth_2d.outx3dgen
+date;echo lagrit 2d 3d ratio zoning ;lagrit < make_2d_3d_ratio_zoning.lgi  > log_2d_3d_ratio_zoning.outx3dgen
+#
+# This takes longer due to 101**3 and 501**3 vertex test cases
+date;echo lagrit extreme meshes     ;lagrit < make_3d_meshes.lgi
+#
+foreach mesh (mesh_*)
+
+if (-e generic.inp)      rm generic.inp
+if (-e $mesh:r.stdout)   rm $mesh:r.stdout
+if (-e $mesh:r.stderr)   rm $mesh:r.stderr
+touch $mesh:r.stdout
+touch $mesh:r.stderr
+
+date
+echo PROCESS: $mesh
+echo $mesh >> $mesh:r.stdout
+echo $mesh >> $mesh:r.stderr
+
+ln -s $mesh generic.inp
+
+# LaGriT will output generic.stor
+#time lagrit < generic_stor.lgi                                       >& $mesh:r.stderr
+#time voronoi -d -avs generic.inp -type fehm     -o generic.storvor   >& $mesh:r.stderr
+#time voronoi -d -avs generic.inp -type pflotran -o generic.pflotran  >& $mesh:r.stderr
+#time voronoi -d -avs generic.inp -type tough2   -o generic.tough2    >& $mesh:r.stderr
+lagrit < generic_stor.lgi                                       >& $mesh:r.stderr
+$voronoi -d -avs generic.inp -type fehm     -o generic.storvor   >& $mesh:r.stderr
+$voronoi -d -avs generic.inp -type pflotran -o generic.pflotran  >& $mesh:r.stderr
+$voronoi -d -avs generic.inp -type tough2   -o generic.tough2    >& $mesh:r.stderr
+
+if (-e $mesh:r.stor)     rm $mesh:r.stor
+if (-e $mesh:r.storvor)  rm $mesh:r.storvor
+if (-e $mesh:r.pflotran) rm $mesh:r.pflotran
+if (-e $mesh:r.tough2)   rm $mesh:r.tough2
+
+if (-e generic.stor) then
+     echo SUCCESS: $mesh produced $mesh:r.stor
+     mv generic.stor     $mesh:r.stor
+else
+     echo FAIL: $mesh failed to produce $mesh:r.stor
+endif
+
+if (-e generic.storvor) then
+     echo SUCCESS: $mesh produced $mesh:r.storvor
+     mv generic.storvor  $mesh:r.storvor
+else
+     echo FAIL: $mesh failed to produce $mesh:r.storvor
+endif
+
+if (-e generic.pflotran) then 
+     echo SUCCESS: $mesh produced $mesh:r.pflotran
+     mv generic.pflotran $mesh:r.pflotran
+else
+     echo FAIL: $mesh failed to produce $mesh:r.pflotran
+endif
+
+if (-e generic.tough2) then 
+     echo SUCCESS: $mesh produced $mesh:r.tough2
+     mv generic.tough2   $mesh:r.tough2
+else
+     echo FAIL: $mesh failed to produce $mesh:r.tough2
+endif
+
+rm generic.inp
+rm *.inp *.stdout *.stderr *.storvar *.pflotran *.tough2
+
+end
+
+

@@ -1,0 +1,7 @@
+cmo / create / motet / / / tet
+copypts / motet / mohex
+cmo / setatt / motet / imt / 1 0 0 / 1
+cmo / setatt / motet / itp / 1 0 0 / 0
+connect / noadd
+cmo / setatt / motet / itetclr / 1 0 0 / 1
+finish

@@ -1,0 +1,16 @@
+#F90 related files
+*.o
+*.mod
+*.out
+*.sw*
+*.swo
+*.F90~
+*.F90.swo
+*.F90.swp
+*.stor
+*.lgi
+*.jpg
+*.gmv
+.DS_Store
+._.DS_Store
+voronoi
