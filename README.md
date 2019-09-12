@@ -30,7 +30,7 @@ Cross-platform & open source
 
 ### Building ###
 
-For building instructions, see the [Build page](http://lanl.github.io/voronoi/build.html).
+For building instructions, see the [Build page](https://lanl.github.io/voronoi/docs/building/).
 
 ### License ###
 

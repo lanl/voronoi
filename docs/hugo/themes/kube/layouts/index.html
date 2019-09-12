@@ -5,9 +5,19 @@
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <script src="https://unpkg.com/pts@0.6.6/dist/pts.min.js"></script>
 
-<!-- Activate Pts.js demo -->
+<style>
+.vor_bg_img {
+  height: 5000px;
+  background-image: radial-gradient(rgb(255,255,255,1), rgb(255,255,255,0.4), rgb(255,255,255,1)), url("{{ "/img/kube/vor_bg.png" | relURL }}");
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-position: top center;
+  background-size: cover;
+}
+</style>
+
 <div id="board">
-    <div id="pt">
+    <div id="pt" class="vor_bg_img">
     </div>
 </div>
 
@@ -76,8 +86,6 @@
   </div>
 </div>
 </div>
-
-<script type='text/javascript' src="{{ "/js/pts_demo_header.js" | relURL }}"></script>
 
 {{ end }}
 {{ define "footer"}} {{ partial "footer" .}} {{end}}

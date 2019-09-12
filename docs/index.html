@@ -104,9 +104,19 @@
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <script src="https://unpkg.com/pts@0.6.6/dist/pts.min.js"></script>
 
+<style>
+.vor_bg_img {
+  height: 5000px;
+  background-image: radial-gradient(rgb(255,255,255,1), rgb(255,255,255,0.4), rgb(255,255,255,1)), url("/img/kube/vor_bg.png");
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-position: top center;
+  background-size: cover;
+}
+</style>
 
 <div id="board">
-    <div id="pt">
+    <div id="pt" class="vor_bg_img">
     </div>
 </div>
 
@@ -176,15 +186,13 @@
 </div>
 </div>
 
-<script type='text/javascript' src="./js/pts_demo_header.js"></script>
-
 </main>
   <footer>   <footer id="footer">
     <nav>
       <ul>
         <li><span>VORONOI</span></li>
         <li>
-          <a href="https://www.lanl.gov/org/padste/adcles/earth-environmental-sciences/computational-earth-science/index.php">EES-16</a>
+          <a href="https://www.lanl.gov/org/ddste/aldcels/earth-environmental-sciences/computational-earth-science/index.php">EES-16</a>
         </li>
         <li>
           <a href="https://www.github.com/lanl/voronoi">GitHub</a>
