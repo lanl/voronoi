@@ -1,6 +1,6 @@
-![alt text](documentation/logo.png "Voronoi")
+![](docs/hugo/themes/kube/static/img/kube/voronoi_logo-black.png)
 
-[![pipeline status](https://gitlab.com/sft-meshing/voronoi/badges/master/pipeline.svg)](https://gitlab.com/sft-meshing/voronoi/commits/master)
+[![pipeline status](https://travis-ci.org/lanl/voronoi.svg?branch=master)](https://travis-ci.org/lanl/voronoi)
 
 VORONOI is a parallel, scalable control volume tessellation generator, built for use in subsurface flow and transport solvers.
 
@@ -44,9 +44,7 @@ found in the LICENSE.md file of the repository.*
 
 ### Contact ###
 
-For help and support, contact Daniel Livingston (livingston@lanl.gov), Carl Gable (gable@lanl.gov), or Satish Karra (satkarra@lanl.gov).
+For help and support, contact Daniel Livingston (livingston@lanl.gov).
 
 To report a bug or feature request, open an issue on the GitHub Issue Tracker.
-
-
 

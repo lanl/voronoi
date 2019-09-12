@@ -1,0 +1,83 @@
+{{ define "title"}} {{ .Site.Title}} {{end}}
+{{ define "header"}} {{ partial "header" .}} {{end}}
+{{ define "main"}}
+
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<script src="https://unpkg.com/pts@0.6.6/dist/pts.min.js"></script>
+
+<!-- Activate Pts.js demo -->
+<div id="board">
+    <div id="pt">
+    </div>
+</div>
+
+<!-- Begin main body -->
+<div id="main">
+  <div id="hero">
+    <!--<h1>{{.Title}}</h1>-->
+    <a><img alt="VORONOI" src="{{ "/img/kube/voronoi_logo-black.png" | relURL }}" width="390"></a>
+    <p>{{.Description}}</p>
+  </div>
+  <div id="action-buttons">
+    <a class="button primary big" href="https://github.com/lanl/voronoi/releases" onclick="_gaq.push(['_trackEvent', 'kube', 'download']);">Download</a> <a class="button outline big" href="https://github.com/lanl/voronoi" onclick="_gaq.push(['_trackEvent', 'kube', 'github']);">View on Github</a>
+    <p>Version 1.0.0 from September 10, 2019.</br>Zip-archive, includes all source code and documentation</p>
+  </div>
+  <div class="message focus" data-component="message"> <span class="close small"></span>
+    Augment VORONOI with <a class="button inverted small " href="https://www.github.com/lanl/LaGriT" >LaGriT </a>, a powerful 2D and 3D unstructured finite element mesh generation suite
+  </div>
+  <div id="kube-features">
+    <div class="row gutters">
+      <div class="col col-4 item">
+        <figure>
+          <i class="material-icons" style="font-size: 55px;">dehaze</i>
+        </figure>
+        <h3>Massively Parallel</h3>
+        <p>Built on PETSc and MPI, VORONOI is made to be fast. Compute control volumes for a 10^6 million node mesh in under 1.5 seconds*. And using PETSc's distributed sparse matrices as the core data type for computation, local node memory is fast, cheap, and is only gathered once.</p>
+      </div>
+      <div class="col col-4 item">
+        <figure>
+          <i class="material-icons" style="font-size: 55px;">done_all</i>
+        </figure>
+        <h3>Cross-Solver Compatibility</h3>
+        <p>Use VORONOI with PFLOTRAN, FEHM, or TOUGH to take any Delaunay triangular, tetrahedral, quad or hex mesh and make it ready for use.</br></br></p>
+      </div>
+      <div class="col col-4 item">
+
+        <figure>
+          <i class="material-icons" style="font-size: 55px;">layers</i>
+        </figure>
+        <h3>LaGriT Integration</h3>
+        <p>With VORONOI, all the power of LaGriT is embedded into the binary - so you can pass in any LaGriT input file, and VORONOI will run the script and generate the control volumes on the CMO. In addition, VORONOI is now available as an output subroutine in LaGriT.</p>
+      </div>
+    </div>
+    <div class="row gutters">
+      <div class="col col-4 item">
+        <figure>
+          <i class="material-icons" style="font-size: 55px;">tune</i>
+        </figure>
+        <h4>Solver-Specific Features</h4>
+        <p>With FEHM, STOR file size can be reduced by removing any coefficients below a threshold and 'merging' duplicate coefficients.<br/>In TOUGH, the ISOT and ROCK blocks are automatically generated based on mesh characteristics.</p>
+      </div>
+      <div class="col col-4 item">
+        <figure>
+          <i class="material-icons" style="font-size: 55px;">grid_on</i>
+        </figure>
+        <h4>Control Volume Visualization</h4>
+        <p>Output your Voronoi or median tessellation in the VTK XML file format, ready for viewing in many popular 3D visualization software programs.</p>
+      </div>
+      <div class="col col-4 item">
+        <figure>
+          <i class="material-icons" style="font-size: 55px;">public</i>
+        </figure>
+        <h4>Open Source</h4>
+        <p>VORONOI is licensed under <a href="https://opensource.org/licenses/BSD-3-Clause">BSD-3</a>
+      , and is absolutely free for personal or commercial use.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<script type='text/javascript' src="{{ "/js/pts_demo_header.js" | relURL }}"></script>
+
+{{ end }}
+{{ define "footer"}} {{ partial "footer" .}} {{end}}

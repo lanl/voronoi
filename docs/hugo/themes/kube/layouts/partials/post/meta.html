@@ -1,0 +1,10 @@
+<span class="icon">
+  <i class="fa fa-clock-o" aria-hidden="true"></i>
+</span>
+<span class="icon">
+ <i class="fa fa-pencil" aria-hidden="true"></i>
+</span>
+{{ if .PublishDate.IsZero }}
+{{ else if lt .PublishDate .Lastmod }}
+{{ else }}
+{{ end }}

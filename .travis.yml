@@ -46,8 +46,7 @@ install:
   - cd ${DEPS_DIR}
   - git clone https://gitlab.com/petsc/petsc.git petsc && cd petsc
   - git checkout xsdk-0.2.0
-  - ./configure --download-mpich=yes --download-metis=yes --download-parmetis=yes
-  - exit 23
+  - ./configure --download-mpich=yes --download-metis=yes --download-parmetis=yes --download-fblaslapack=1
   - export PETSC_DIR=$(pwd) && export PETSC_ARCH=arch-linux2-c-opt
   - if [ $TRAVIS_OS_NAME = osx ]; then export PETSC_ARCH=arch-darwin-c-opt; fi
   - make PETSC_DIR=$PETSC_DIR PETSC_ARCH=$PETSC_ARCH all

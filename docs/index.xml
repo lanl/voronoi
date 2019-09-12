@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>VORONOI</title>
+    <link>/</link>
+    <description>Recent content on VORONOI</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 22 Oct 2018 12:17:12 -0600</lastBuildDate>
+    
+	<atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>About</title>
+      <link>/docs/about/</link>
+      <pubDate>Mon, 22 Oct 2018 12:17:12 -0600</pubDate>
+      
+      <guid>/docs/about/</guid>
+      <description>Overview VORONOI is a parallel, scalable control volume tessellation generator, built for use in subsurface flow and transport solvers.
+The program accepts a Delaunay mesh composed of one of four element types: triangles, tetrahedrals, quads, or hexes.
+It then finds the Voronoi dual or median of that mesh, and writes it in a solver-specific format:
+ FEHM (.stor) PFLOTRAN (.uge) TOUGH (MESH) HDF5 (for general use; .h5)  Features  Accurate calculation of Voronoi/Median cell volume and cell face area in 2D and 3D Reads AVS and LaGriT input files (.</description>
+    </item>
+    
+    <item>
+      <title>Building</title>
+      <link>/docs/building/</link>
+      <pubDate>Mon, 22 Oct 2018 12:17:12 -0600</pubDate>
+      
+      <guid>/docs/building/</guid>
+      <description>Required software  Fortran 95 compiler (gfortran &amp;gt; 4.0; ifort &amp;gt;= 14) C/C++ compiler (gcc; icc) git make Cmake &amp;gt;= 3.10.0  Build steps 1.0. Ensure that all required dependencies are fulfilled.
+Building PETSc 2.0. Clone and build PETsc, on the xsdk-0.2.0 tag:
+$ git clone https://gitlab.com/petsc/petsc.git petsc $ cd petsc $ git checkout xsdk-0.2.0  2.1. Run ./configure to configure the build with environment-specific settings. As an example,</description>
+    </item>
+    
+    <item>
+      <title>Contributing</title>
+      <link>/docs/contribute/</link>
+      <pubDate>Mon, 22 Oct 2018 12:17:12 -0600</pubDate>
+      
+      <guid>/docs/contribute/</guid>
+      <description>How to Contribute Pull requests for missing features, bug fixes, and documentation updates are more than welcome. To contribute, please submit a pull request at
+github.com/lanl/voronoi  To ensure the best chance of acceptance for your pull request, please ensure that:
+ All continuous integration tests pass Your code is well documented and commented If adding new functionality, that unit tests have been included in the PR That the purpose and scope of your contributions are well explained in the PR That your code has minimal/no dependencies on extraneous libraries / standards (i.</description>
+    </item>
+    
+    <item>
+      <title>Geometrical Calculations</title>
+      <link>/docs/math/</link>
+      <pubDate>Mon, 22 Oct 2018 12:17:12 -0600</pubDate>
+      
+      <guid>/docs/math/</guid>
+      <description>(Un)constrained Delaunay Meshes null
+Calculating the Voronoi tessellation null
+Calculating the Median tessellation null</description>
+    </item>
+    
+    <item>
+      <title>Getting Started</title>
+      <link>/docs/getting-started/</link>
+      <pubDate>Mon, 22 Oct 2018 12:17:12 -0600</pubDate>
+      
+      <guid>/docs/getting-started/</guid>
+      <description>Execution Overview Follow the documentation on building VORONOI and run the test suite to verify build integrity.
+General usage for executing VORONOI follows this pattern:
+mpiexec -np N voronoi [commands...]  where N is the number of MPI nodes desired.
+A list of available commands can be found by running:
+voronoi -h  Examples To generate a VORONOI tessellation in the FEHM format from an AVS mesh, run
+mpiexec -np 4 voronoi -avs my_mesh.</description>
+    </item>
+    
+    <item>
+      <title>Parallel Performance</title>
+      <link>/docs/scaling/</link>
+      <pubDate>Mon, 22 Oct 2018 12:17:12 -0600</pubDate>
+      
+      <guid>/docs/scaling/</guid>
+      <description>Performance on high-element meshes Example 1
+Example name: TSA250_9 Nodes: 40,127,977 Elements: 82,304,132 Element type: triangle Input file size: 16583177171 Time spent on reading: 4m1s Time spent on coefficient calculations: 30.01 s Time spent on writing: 10m6s Total time: 14m35s Maximum memory usage: 1.134 GB &amp;lt;&amp;ndash; check this MPI cores used: 64
+All examples were run on a __ processor with 88 cores and 252 GB RAM; x86_64 GNU/Linux Ubuntu 16.</description>
+    </item>
+    
+    <item>
+      <title>Publications</title>
+      <link>/blog/publications/</link>
+      <pubDate>Mon, 22 Oct 2018 12:17:12 -0600</pubDate>
+      
+      <guid>/blog/publications/</guid>
+      <description>BibTeX format @Misc{voronoi-web-page, Author = &amp;quot;Daniel R. Livingston, Carl W. Gable, Satish Karra, Manuel Sentis, Michael J. Hannon, Rajesh Pawar&amp;quot;, Title = &amp;quot;{VORONOI} {W}eb page&amp;quot;, Note = &amp;quot;http://www.github.com/lanl/voronoi&amp;quot;, Year = &amp;quot;2018&amp;quot; }  Publications   Hannon, M. et al. Permeability Estimates of Fractured Cylindrical Samples by the Analysis of Pressure Transients. Proceedings of the TOUGH Symposium 2018, Berkeley, CA, Oct 8-10, 2018
+ Livingston, D. et al. VORONOI: An Orthogonally-Constrained and Numerically Accurate Processor for Subsurface Codes.</description>
+    </item>
+    
+    <item>
+      <title>Release Notes</title>
+      <link>/docs/release-notes/</link>
+      <pubDate>Mon, 22 Oct 2018 12:17:12 -0600</pubDate>
+      
+      <guid>/docs/release-notes/</guid>
+      <description> 1.0.0 September 10th, 2019
+ Initial release  </description>
+    </item>
+    
+    <item>
+      <title>Tools</title>
+      <link>/docs/tools/</link>
+      <pubDate>Mon, 22 Oct 2018 12:17:12 -0600</pubDate>
+      
+      <guid>/docs/tools/</guid>
+      <description>Visualizing the sparse matrix Found in: viewSparseMatrix.py
+This script visualizes a sparse matrix for a given mesh - this is a handy way to quickly view the i,j connections between nodes.
+Voronoi cell volumes are represented on the matrix diagonal, while the off-diagonals represent: (Voronoi area_ij/interface_ij length).
+In the current implementation, an NxN sparse matrix is converted to an NxN image - be mindful of very large meshes as to not run into memory issues.</description>
+    </item>
+    
+    <item>
+      <title>Usage</title>
+      <link>/docs/usage/</link>
+      <pubDate>Mon, 22 Oct 2018 12:17:12 -0600</pubDate>
+      
+      <guid>/docs/usage/</guid>
+      <description>Command Line Usage    Command Functionality     -avs [INFILE.inp] AVS-UCD mesh to read   -lg [INFILE.lgi] LaGriT infile to run   -type [fehm,pflotran,tough2,hdf5] filetype to write to   -cv [voronoi,median] control volume type   -d write mesh statistics to stdout   -o filepath to save geometric coefficient data   -compress coefficient compression (FEHM only)   -dedud epsilon coefficient removal (FEHM only)    More detailed information can be run by calling</description>
+    </item>
+    
+    <item>
+      <title>Contact</title>
+      <link>/blog/contact/</link>
+      <pubDate>Mon, 22 Oct 2018 17:26:56 -0600</pubDate>
+      
+      <guid>/blog/contact/</guid>
+      <description>Contact Information For bug reports and feature requests, submit a ticket at GitHub Issues.
+For everything else, contact Daniel Livingston at livingston@lanl.gov
+Development Team  Daniel Livingston, Los Alamos National Laboratory Carl Gable, Los Alamos National Laboratory Satish Karra, Los Alamos National Laboratory Manuel Sentis, Swiss Federal Safety Inspectorate Michael Hannon, Jr., Indiana Geological &amp;amp; Water Survey Rajesh Pawar, Los Alamos National Laboratory  Related Web Pages  VORONOI GitHub LaGriT Mesh Generation Toolkit Meshing for Geological Applications (Los Alamos National Laboratory) Computational Earth Science (EES-16) at Los Alamos National Laboratory FEHM PFLOTRAN TOUGH</description>
+    </item>
+    
+  </channel>
+</rss>

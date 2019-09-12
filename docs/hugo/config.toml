@@ -1,0 +1,31 @@
+baseURL = "/"
+publishDir = ".."
+languageCode = "en-us"
+title = "VORONOI"
+theme = "kube"
+relativeURLS=true
+description = "Kube is a professional  and a responsive Hugo theme for developers and designers that offers a documentation section mixed with a landing page and a blog"
+Paginate = 4
+[Params]
+  RSSLink = "/index.xml"
+  author = "EES-16 | Los Alamos National Laboratory" # add your company name
+  github = "https://www.github.com/lanl/voronoi" # add your github profile name
+  twitter = "" # add your twitter profile
+  email = "livingston@lanl.gov"
+
+[[menu.main]]
+    name = "About"
+    weight = -103
+    url = "/docs/about/"
+[[menu.main]]
+    name = "Documentation"
+    weight = -102
+    url = "/docs/"
+[[menu.main]]
+    name = "Publications"
+    weight = -101
+    url = "/blog/publications/"
+[[menu.main]]
+    name = "Contact"
+    weight = -100
+    url = "/blog/contact/"
