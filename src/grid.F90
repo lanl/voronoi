@@ -67,6 +67,8 @@ subroutine PrintInitialConditions(grid,atts,rank,size)
         ftype = 'PFLOTRAN grid file'
       case (4)
         ftype = '         HDF5 file'
+      case (5)
+        ftype = '  Stanford Polygon'
       case default
         ftype = '   UNKNOWN (ERR 1)'
     end select
@@ -396,10 +398,6 @@ subroutine ReadSTORFile(grid,rank,size,infile)
 
   endif
 
-
-
-
-
 end subroutine ReadSTORFile
 
 ! ************************************************************************** !
@@ -443,11 +441,11 @@ subroutine GridRead(grid,rank,size)
   PetscInt :: fileid, ivertex, iconn, iatt, irank, remainder
   PetscInt :: temp_int1, temp_int2, temp_int3, num_to_read, num_to_read_save, ielem
   PetscInt :: data(5)
-  PetscInt :: ifrac, indx, temp(3)
+  PetscInt :: ifrac, indx
   PetscInt :: num_elems, num_pts, num_atts
   PetscInt :: num_pts_local, num_pts_local_save
   PetscInt :: num_elems_local, num_elems_local_save
-  PetscInt :: zero=0,one=1,two=2,three=3
+  PetscInt :: zero=0,one=1
   PetscMPIInt :: status_mpi(MPI_STATUS_SIZE)
   PetscMPIInt :: int_mpi
   PetscErrorCode :: ierr
@@ -1099,9 +1097,11 @@ subroutine CalculateGeometricCoeff(grid,rank,atts)
   PetscViewer :: viewer
 
   ! TMP
-  !allocate(grid%ply_m1(grid%num_pts_global,grid%num_pts_global,3))
-  !allocate(grid%ply_m2(3*grid%num_elems_global,7))
-  !allocate(grid%ply_m3(grid%num_elems_global,3))
+  if (grid%outtype == 5) then
+    allocate(grid%ply_m1(grid%num_pts_global,grid%num_pts_global,3))
+    allocate(grid%ply_m2(3*grid%num_elems_global,7))
+    allocate(grid%ply_m3(grid%num_elems_global,3))
+  endif
 
   temp = 0
 
@@ -1517,23 +1517,25 @@ subroutine PhaseAreaVolumeLength(grid,rank,cell_area,cell_vol,cell_len,idx1,idx2
   !
   !=============================================================================
 
-  !idx1 = grid%vertex_ids_map((ielem-1)*3+1)
-  !idx2 = grid%vertex_ids_map((ielem-1)*3+2)
-  !idx3 = grid%vertex_ids_map((ielem-1)*3+3)
+  if (grid%outtype == 5) then
+    idx1 = grid%vertex_ids_map((ielem-1)*3+1)
+    idx2 = grid%vertex_ids_map((ielem-1)*3+2)
+    idx3 = grid%vertex_ids_map((ielem-1)*3+3)
 
-  !grid%ply_m1(idx1,idx1,:) = v1
-  !grid%ply_m1(idx2,idx2,:) = v2
-  !grid%ply_m1(idx3,idx3,:) = v3
+    grid%ply_m1(idx1,idx1,:) = v1
+    grid%ply_m1(idx2,idx2,:) = v2
+    grid%ply_m1(idx3,idx3,:) = v3
 
-  !grid%ply_m1(min(idx1,idx2),max(idx1,idx2),:) = e12
-  !grid%ply_m1(min(idx2,idx3),max(idx2,idx3),:) = e23
-  !grid%ply_m1(min(idx1,idx3),max(idx1,idx3),:) = e13
+    grid%ply_m1(min(idx1,idx2),max(idx1,idx2),:) = e12
+    grid%ply_m1(min(idx2,idx3),max(idx2,idx3),:) = e23
+    grid%ply_m1(min(idx1,idx3),max(idx1,idx3),:) = e13
 
-  !grid%ply_m2((ielem-1)*3+1,:) = (/idx1,idx1,min(idx1,idx2),max(idx1,idx2),min(idx1,idx3),max(idx1,idx3),ielem/) ! ielem == redundant? idx % 3 == ielem
-  !grid%ply_m2((ielem-1)*3+2,:) = (/idx2,idx2,min(idx1,idx2),max(idx1,idx2),min(idx2,idx3),max(idx2,idx3),ielem/) ! ielem == redundant? idx % 3 == ielem
-  !grid%ply_m2((ielem-1)*3+3,:) = (/idx3,idx3,min(idx1,idx3),max(idx1,idx3),min(idx2,idx3),max(idx2,idx3),ielem/) ! ielem == redundant? idx % 3 == ielem
+    grid%ply_m2((ielem-1)*3+1,:) = (/idx1,idx1,min(idx1,idx2),max(idx1,idx2),min(idx1,idx3),max(idx1,idx3),ielem/) ! ielem == redundant? idx % 3 == ielem
+    grid%ply_m2((ielem-1)*3+2,:) = (/idx2,idx2,min(idx1,idx2),max(idx1,idx2),min(idx2,idx3),max(idx2,idx3),ielem/) ! ielem == redundant? idx % 3 == ielem
+    grid%ply_m2((ielem-1)*3+3,:) = (/idx3,idx3,min(idx1,idx3),max(idx1,idx3),min(idx2,idx3),max(idx2,idx3),ielem/) ! ielem == redundant? idx % 3 == ielem
 
-  !grid%ply_m3(ielem,:) = lcc
+    grid%ply_m3(ielem,:) = lcc
+  endif
   !=============================================================================
   
   ! calculate the Voronoi phase area--vec
@@ -4406,7 +4408,7 @@ subroutine DumpPLY(grid,rank,size)
     return
   endif
 
-  outfile = 'test_poly.ply'
+  outfile = trim(grid%dump_str)
 
   open(fileid,file=trim(outfile))
 
@@ -4442,12 +4444,12 @@ subroutine DumpPLY(grid,rank,size)
     do j=1,6,2
       ! write out v_i and e_ij
       v = grid%ply_m1(grid%ply_m2(i,j),grid%ply_m2(i,j+1),:)
-      write(fileid,'(3F10.7)') v
+      write(fileid,'(3F20.8)') v
     enddo
 
     ! write out lcc
     v = grid%ply_m3(grid%ply_m2(i,7),:)
-    write(fileid,'(3F10.7)') v
+    write(fileid,'(3F20.8)') v
   enddo
 
   ! write out elements

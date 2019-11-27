@@ -153,6 +153,10 @@ program voronoi
          out_type = 4
          grid%outtype = 4
          tmp_str = 'voronoi.h5'
+      case ('poly')
+         out_type = 5
+         grid%outtype = 5
+         tmp_str = 'voronoi.ply'
       case default
          if (rank == io_rank) print *, 'UNKNOWN OUTPUT FLAG: DEFAULTING TO FEHM'
          out_type = 1
@@ -236,6 +240,8 @@ program voronoi
       call GridWritePFLOTRAN(grid, rank, size)
    elseif (out_type == 4) then
       call GridWriteHDF5(grid, rank, size)
+   elseif (out_type == 5) then
+      if (rank == io_rank) call DumpPLY(grid,rank,size)
    endif
 
    call GridDestroy(grid)

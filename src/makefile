@@ -125,12 +125,19 @@ export VORONOI_HELP
 #endif
 #
 
-.PHONY: voronoi test help lglibs
-voronoi : $(voronoi_obj)
+.PHONY: validate voronoi test help lglibs
+voronoi :: validate $(voronoi_obj)
 	${FLINKER} -o voronoi ${LG_BUILD_DIR}/lagrit_fdate.o $(voronoi_obj) \
 	${LG_BUILD_DIR}/lg_main_lib.a ${LG_BUILD_DIR}/lg_util.a \
 	-L${HDF5_DIR}/lib -I${HDF5_DIR}/include \
 	${PETSC_LIB} -lhdf5_fortran ${LIBS} 
+
+validate :
+	@CHECK=0
+	@[ -z "${HDF5_DIR}" ] && echo "HDF5_DIR not defined" && exit 1 || CHECK=1
+	@[ -z "${PETSC_DIR}" ] && echo "PETSC_DIR not defined" && exit 1 || CHECK=1
+	@[ -z "${PETSC_ARCH}" ] && echo "PETSC_ARCH not defined" && exit 1 || CHECK=1
+	@[ -z "${LAGRIT_DIR}" ] && echo "LAGRIT_DIR not defined" && exit 1 || CHECK=1
 
 test : 
 	@echo "hello"
