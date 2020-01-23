@@ -1200,11 +1200,7 @@ subroutine CalculateGeometricCoeff3D(grid,rank,atts)
 
   temp = 0
 
-  print*,'entering loop...'
-
   do i=1,grid%num_elems_local
-
-     if (mod(i,10) == 0) print*,'okay'
 
      ! temp pulls a single element (tet/tri) from the array
      temp = grid%elem_connectivity(i,:)
@@ -1250,8 +1246,6 @@ subroutine CalculateGeometricCoeff3D(grid,rank,atts)
      call MatSetValue(grid%adjmatrix,temp(4)-1,temp(4)-1,cell_vol(4),ADD_VALUES,ierr);CHKERRQ(ierr)
   enddo
 
-  print*,'get here?'
-
   call MatAssemblyBegin(grid%adjmatrix,MAT_FINAL_ASSEMBLY,ierr);CHKERRQ(ierr)
   call MatAssemblyEnd(grid%adjmatrix,MAT_FINAL_ASSEMBLY,ierr);CHKERRQ(ierr)  
 
@@ -1264,8 +1258,6 @@ subroutine CalculateGeometricCoeff3D(grid,rank,atts)
     call MatAssemblyEnd(grid%adjmatrix_area,MAT_FINAL_ASSEMBLY,ierr);CHKERRQ(ierr)
   !endif
   ! TOUGH2 END
-
-  print*,'get here2?'
 
  call VecDestroy(grid%coordinates_local,ierr);CHKERRQ(ierr)
 
