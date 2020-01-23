@@ -2702,6 +2702,7 @@ contains
       PetscInt, allocatable :: sendcounts(:), pos(:)
       PetscReal, allocatable :: connectivity(:, :), connect_area(:, :), connect_map(:), connect_map_local(:), temp_connections(:)
       PetscReal, allocatable :: areax_tmp(:), areax_local(:), connectivity_local(:), connectivity_tmp(:)
+      logical :: print_isot_warning = .true.
       Vec :: mat_diag
       PetscErrorCode :: ierr
 
@@ -3151,6 +3152,11 @@ contains
                ! TODO: This should be parallel processed. NOT computed on the fly (single core!)
                isot = getISOT((/x(i), y(i), z(i)/), (/x(j), y(j), z(j)/))
 
+               if ((print_isot_warning .eqv. .true.) .and. (isot == 0)) then
+                  print *, 'WARNING: At least one non-conforming connection vector. Setting ISOT to 0.'
+                  print_isot_warning = .false.
+               endif
+
                write (fileid, 9110) conneTOUGH2(ELE(i), ELE(j), isot, distance, distance, connect_area(i, k), cosine)
             enddo
          enddo
@@ -3362,7 +3368,6 @@ contains
          getISOT = 1
       else
          getISOT = 0
-         print *, 'WARNING: Non-conforming connection vector. Setting ISOT to 0.'
       endif
 
       return
@@ -3393,9 +3398,6 @@ contains
       !character(len=2) :: tmp
       character(len=5) :: tmp
       character(len=5), dimension(val_size) :: final_chr
-
-! commented out for now.
-!878 format (I0.2)
 
 878   format(I0.1)
 
@@ -3531,8 +3533,6 @@ contains
       PetscReal :: volx, ahtx     ! element volume & interface area
       PetscReal :: x, y, z         ! grid block center
 
-      !75 format (6ES10.4)
-
 75    format(6E10.4)
 
       ! Write out element & material names
@@ -3637,11 +3637,11 @@ contains
                cchr = cchr + 1
             endif
 
-            ! a - z
+         ! a - z
          elseif ((cchr .ge. 26) .AND. (cchr .lt. 52)) then
             cchr = cchr - 27 + 97 + 1
 
-            ! 0 - 9
+         ! 0 - 9
          elseif ((cchr .ge. 52)) then
             cchr = cchr - 52 + 48
          endif
@@ -3959,28 +3959,6 @@ contains
          deallocate (recvcounts)
       endif
 
-      !do i=1,grid%num_pts_local!grid%num_pts_global
-
-      !  ! ORIGINAL:
-      !  ! call MatGetRow(grid%connectivity,(i-1),ncols,PETSC_NULL_INTEGER,temp_connections,ierr);CHKERRQ(ierr)
-
-      !  temp_int = int(vec_ptr(i))
-
-      !  ! Parse out the connection matrix
-      !  temp_connections = 0.
-      !  call MatGetRow(grid%connectivity,grid%vertex_ids(i)-1,ncols,PETSC_NULL_INTEGER,temp_connections,ierr);CHKERRQ(ierr)
-      !  connectivity(i,:) = temp_connections
-      !  print*,'rank = ',rank,'; ',temp_connections
-      !  call MatRestoreRow(grid%connectivity,grid%vertex_ids(i)-1,ncols,PETSC_NULL_INTEGER,temp_connections,ierr)
-
-      !  ! Parse out the AREAX coefficients
-      !  temp_connections = 0.
-      !  call MatGetRow(grid%connect_area,grid%vertex_ids(i)-1,ncols,PETSC_NULL_INTEGER,temp_connections,ierr);CHKERRQ(ierr)
-      !  connect_area(i,:) = temp_connections
-      !  call MatRestoreRow(grid%connect_area,grid%vertex_ids(i)-1,ncols,PETSC_NULL_INTEGER,temp_connections,ierr)
-      !enddo
-
-      ! ====================================================
       if (rank == io_rank) then
          allocate (sendcounts_pts(size))
          allocate (sendcounts_edge(size)) ! for the upper triangular case without diagonal element
