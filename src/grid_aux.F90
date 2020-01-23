@@ -43,9 +43,6 @@ module Grid_Aux_module
     character(len=150) :: avs_str, lg_str, out_str, zone_str, dump_str ! argument passing strings
     character(len=150) :: outfile                                      ! stor file output
     character(len=5), dimension(:), allocatable :: imt_values
-    PetscReal, dimension(:,:,:), allocatable :: ply_m1 ! TODO: change to petsc upper triangular sparse matrix
-    PetscInt, dimension(:,:), allocatable :: ply_m2    ! TODO: change to petsc upper triangular sparse matrix
-    PetscReal, dimension(:,:), allocatable :: ply_m3   ! TODO: change to petsc upper triangular sparse matrix
 
     PetscBool :: lg_flag, avs_flag, out_flag, zone_flag, dump_flag, verbose_flag     ! argument passing flags
     PetscBool :: is_tough

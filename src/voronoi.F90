@@ -20,7 +20,6 @@ program voronoi
    implicit none
    character(len=*), parameter :: version = '0.9.0'
    character(len=10) :: cv_str
-   !character(len=*) :: OS
    character(len=150) :: tmp_str
 
    ! grid_type defined in grid_aux.F90
@@ -38,8 +37,6 @@ program voronoi
 
    verbosity = 2 ! Set default verbosity level
 
-   !if (rank==io_rank) call cpu_time(time_start) ! Begin sys clock timer
-
    !---------------- Begin main block --------------------------
    call PetscInitialize(PETSC_NULL_CHARACTER, ierr); CHKERRQ(ierr)
    call MPI_Comm_rank(PETSC_COMM_WORLD, rank, ierr); CHKERRQ(ierr)
@@ -47,11 +44,6 @@ program voronoi
 
    grid => GridCreate() ! Creates a grid object (grid_aux.F90)
    atts => DiagCreate() ! Creates a diagnostic attributes object
-
-   !call UnitTests__Compression()
-   !tmpstr = '/scratch/sft/livingston/voronoi_lagrit/gold.stor'
-   !call ReadSTORFile(grid,rank,size,tmpstr)
-   !call EXIT(0)
 
    !----------! Parse command line for flags and input !----------!
    ! Get input type - avs or LaGriT?
@@ -153,10 +145,6 @@ program voronoi
          out_type = 4
          grid%outtype = 4
          tmp_str = 'voronoi.h5'
-      case ('poly')
-         out_type = 5
-         grid%outtype = 5
-         tmp_str = 'voronoi.ply'
       case default
          if (rank == io_rank) print *, 'UNKNOWN OUTPUT FLAG: DEFAULTING TO FEHM'
          out_type = 1
@@ -227,8 +215,6 @@ program voronoi
    if (rank == io_rank) call cpu_time(time_finish)
    if (rank == io_rank) call save_time(time_start, time_finish, 2)
 
-   !call DumpPLY(grid,rank,size)
-
    ! Determine what the desired output format is, then write to it
    if (out_type == 1) then
       call GridWriteFEHM(grid, atts, rank, size)
@@ -240,14 +226,9 @@ program voronoi
       call GridWritePFLOTRAN(grid, rank, size)
    elseif (out_type == 4) then
       call GridWriteHDF5(grid, rank, size)
-   elseif (out_type == 5) then
-      if (rank == io_rank) call DumpPLY(grid,rank,size)
    endif
 
    call GridDestroy(grid)
-
-   !if (rank==io_rank) call cpu_time(time_finish)
-   !if (rank==io_rank) call save_time(time_start,time_finish,2)
 
    call PetscFinalize(ierr); CHKERRQ(ierr)
 
