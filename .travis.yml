@@ -14,9 +14,8 @@ branches:
 
 # Install dependencies for various OS'
 before_install:
-  - if [ $TRAVIS_OS_NAME = windows ]; then choco install make cmake; fi
   - if [ $TRAVIS_OS_NAME = linux ];   then sudo apt-get purge cmake && sudo apt-key update && sudo apt-get update && sudo apt-get -y -f install gfortran libz-dev m4 bison python3 cmake; fi
-  - if [ $TRAVIS_OS_NAME = osx ];     then xcode-select --install && brew update && brew install gcc; fi
+  - if [ $TRAVIS_OS_NAME = osx ];     then brew install gcc || brew update; fi
   - export FC=$(which gfortran);      echo $FC
   - export CC=$(which gcc);           echo $CC
   - export CXX=$(which g++);          echo $CXX
@@ -48,7 +47,7 @@ install:
   - git checkout xsdk-0.2.0
   - ./configure --download-mpich=yes --download-metis=yes --download-parmetis=yes --download-fblaslapack=1
   - export PETSC_DIR=$(pwd) && export PETSC_ARCH=arch-linux2-c-debug
-  - echo "PETSC_DIR = $PETSC_DIR"
+  - echo "PETSC_DIR = $PETSC_DIR ; PETSC_ARCH = $PETSC_ARCH"
   - if [ $TRAVIS_OS_NAME = osx ]; then export PETSC_ARCH=arch-darwin-c-debug; fi
   - make PETSC_DIR=$PETSC_DIR PETSC_ARCH=$PETSC_ARCH all
   - cd -

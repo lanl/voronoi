@@ -441,13 +441,14 @@ contains
       pointer(ixic, xic)
       pointer(iyic, yic)
       pointer(izic, zic)
-      pointer(ipaaa, aaa)
       pointer(ipitet, itet_8)
       pointer(ipitettyp, itettyp_8)
+      pointer(ipimt1, imt1_8)
 
-      PetscReal xic(*), yic(*), zic(*), aaa(*)
-      integer*8 itet_8(*), itettyp_8(*) ! For getting LaGrit 64-bit integer data
+      PetscReal xic(*), yic(*), zic(*)
+      integer*8 itet_8(*), itettyp_8(*), imt1_8(*)
       PetscInt, allocatable :: itet(:), itettyp(:)
+      PetscReal, allocatable :: imt1(:)
 
       if (rank == io_rank) then
 
@@ -473,6 +474,7 @@ contains
             call cmo_get_info('nelements', cmo, ntets_8, ilen, itype, ierror)
             call cmo_get_info('itet', cmo, ipitet, ilen, itype, ierror)
             call cmo_get_info('itettyp', cmo, ipitettyp, ilen, itype, ierror)
+            call cmo_get_info('imt1', cmo, ipimt1, ilen, itype, ierr)
 
             ! Re-cast LaGrit integer*8 to PetscInt
             nsdtopo = nsdtopo_8
@@ -485,10 +487,12 @@ contains
 
             allocate (itet(ntets*(grid%ndim + 1)))
             allocate (itettyp(ntets*(grid%ndim + 1)))
+            allocate (imt1(npoints))
 
             ! Re-cast integer*8 to PestcInt
             itet(1:ntets*(grid%ndim + 1)) = itet_8(1:ntets*(grid%ndim + 1))
             itettyp(1:ntets) = itettyp_8(1:ntets)
+            imt1(1:npoints) = imt1_8(1:npoints)
 
             temp_int1 = npoints
             temp_int2 = ntets
@@ -760,17 +764,18 @@ contains
       enddo
 #endif
 
-!===========================================
-!  Read the imt values for a mesh
-!  -- convert to a character array and store
-!===========================================
+      !===========================================
+      !  Read the imt values for a mesh
+      !  -- convert to a character array and store
+      !===========================================
 
       allocate (grid%imt_values(num_pts))
 
       if (rank == io_rank) then
          ! if we're reading an AVS file...
-         if (grid%lg_flag .eqv. PETSC_FALSE) then
-
+         if (grid%lg_flag .eqv. PETSC_TRUE) then
+            call getMatFromIMT(imt1, num_pts, grid%imt_values)
+         else
             ! if there is no zone flag, AND we're in TOUGH2 mode...
             if ((grid%zone_flag .EQV. PETSC_FALSE) .AND. (grid%is_tough .EQV. PETSC_TRUE)) then
 
@@ -802,6 +807,7 @@ contains
                   endif
 
                   deallocate (imt_vector)
+               ! if num_atts <= 0
                else
                   grid%imt_values = '    1'
                endif
@@ -809,6 +815,8 @@ contains
             close (fileid)
          endif
       endif
+
+      if (allocated(imt1)) deallocate (imt1)
 
    end subroutine GridRead
 
@@ -3437,12 +3445,9 @@ contains
          do j = 1, final_size
             ! if we've found the index, then...
             if (val(i) == final(j)) then
-
-               !if (j > 10) print*,'WARNING: Not configured for this yet!'
-
                ! store in the character array & break
                write (tmp, 878) j
-               final_chr(i) = adjustr(tmp)!'    '//tmp
+               final_chr(i) = adjustr(tmp)
                EXIT
             endif
          enddo
@@ -3530,8 +3535,8 @@ contains
       ! Mutable element variables
       character(len=5) :: elne   ! element name
       character(len=5) :: ma     ! material ID corresponding to a ROCKS entry
-      PetscReal :: volx, ahtx     ! element volume & interface area
-      PetscReal :: x, y, z         ! grid block center
+      PetscReal :: volx, ahtx    ! element volume & interface area
+      PetscReal :: x, y, z       ! grid block center
 
 75    format(6E10.4)
 
