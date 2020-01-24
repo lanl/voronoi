@@ -11,7 +11,7 @@
 #    - help : shows this help screen
 #
 #  Variables:
-#    FC (default: gfortran) : Fortran source compiler
+#    FC (default: gfortran) : Fortran MPI source compiler
 #    FFLAGS : User-defined Fortran flags
 #
 #  Building:
@@ -84,7 +84,7 @@ TARGETS:
 
 VARIABLES:
 
-  FC (default: gfortran) : Fortran source compiler
+  FC (default: gfortran) : Fortran MPI source compiler
   FFLAGS : User-defined Fortran flags
   HDF5_DIR : /path/to/hdf5/
   LAGRIT_DIR : /path/to/LaGriT/
@@ -114,18 +114,8 @@ EXAMPLE:
 endef
 export VORONOI_HELP
 
-# Check if PETSc is properly configured
-#ifeq (${PETSC_DIR},)
-#	$(error FATAL: PETSC_DIR and PETSC_ARCH are not configured.)
-#endif
-#
-## Check LaGriT directory env var
-#ifeq (${LAGRIT_DIR},)
-#	LAGRIT_DIR := ../LaGriT/
-#endif
-#
-
 .PHONY: validate voronoi test help lglibs
+
 voronoi :: validate $(voronoi_obj)
 	${FLINKER} -o voronoi ${LG_BUILD_DIR}/lagrit_fdate.o $(voronoi_obj) \
 	${LG_BUILD_DIR}/lg_main_lib.a ${LG_BUILD_DIR}/lg_util.a \
@@ -138,9 +128,10 @@ validate :
 	@[ -z "${PETSC_DIR}" ] && echo "PETSC_DIR not defined" && exit 1 || CHECK=1
 	@[ -z "${PETSC_ARCH}" ] && echo "PETSC_ARCH not defined" && exit 1 || CHECK=1
 	@[ -z "${LAGRIT_DIR}" ] && echo "LAGRIT_DIR not defined" && exit 1 || CHECK=1
+	@echo "All paths are set."
 
 test : 
-	@echo "hello"
+	cd ../test/sanity_check && python run_tests.py
 
 clean :: 
 	rm -f ${LG_BUILD_DIR}/{*.a,*.o,*.mod}
