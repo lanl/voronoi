@@ -34,7 +34,7 @@ For building instructions, see the [Build page](https://lanl.github.io/voronoi/d
 
 ### License ###
 
-VORONOI is open-source software licensed under the 3-Clause BSD License.
+VORONOI is open-source software licensed under the 3-Clause BSD License. LANL Copyright No. C19012.
 
 *This is open source software; you can redistribute it and/or modify it under
 the terms of the BSD-3 License. If software is modified to produce derivative
