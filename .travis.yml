@@ -16,23 +16,20 @@ before_install:
   - sudo apt-get purge cmake
   - sudo apt-key update
   - sudo apt-get update
-  - sudo apt-get -y -f install gfortran libz-dev m4 bison python3 cmake hugo
-  - echo ">> " && gcc --version && gfortran --version
+  - sudo apt-get -y -f install gcc gfortran libz-dev m4 bison python python3 make cmake hugo
+  - gcc --version && gfortran --version
 
 install:
   ############################################################################
-  # Install a recent CMake
+  # Set environment variables
   ############################################################################
   - DEPS_DIR="${HOME}/deps"
   - mkdir -p ${DEPS_DIR} && cd ${DEPS_DIR}
+  - export PETSC_DIR=${DEPS_DIR}/petsc
+  - export PETSC_ARCH=arch-linux2-c-debug
+  - export HDF5_DIR=${PETSC_DIR}/${PETSC_ARCH}/lib
+  - export LAGRIT_DIR=${DEPS_DIR}/LaGriT/
 
-  # Exodus requires CMAKE 1.10.X+, which apt-get doesn't serve
-  # Manually build
-  - CMAKE_URL="https://cmake.org/files/v3.10/cmake-3.10.0-Linux-x86_64.tar.gz"
-  - mkdir cmake && travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C cmake
-  - export PATH=${DEPS_DIR}/cmake/bin:${PATH}
-  - cd -
-  - echo ">> " && cmake --version
   ############################################################################
   # Build PETSc from source
   ############################################################################
@@ -40,18 +37,14 @@ install:
   - git clone https://gitlab.com/petsc/petsc.git petsc && cd petsc
   - git checkout xsdk-0.2.0
   - python2 './configure' '--with-cc=gcc' '--with-cxx=g++' '--with-fc=gfortran' '--download-mpich' '--download-fblaslapack=1' '--download-hdf5=1'
-  - export PETSC_DIR=$(pwd) && export PETSC_ARCH=arch-linux2-c-debug
-  - export HDF5_DIR=${PETSC_DIR}/${PETSC_ARCH}/lib
-  - echo ">> PETSC_DIR = ${PETSC_DIR} ; PETSC_ARCH = ${PETSC_ARCH}"
-  - echo ">> HDF5_DIR = ${HDF5_DIR}"
   - make PETSC_DIR=${PETSC_DIR} PETSC_ARCH=${PETSC_ARCH} all
   - cd -
+
   ############################################################################
   # Get LaGriT
   ############################################################################
   - cd ${DEPS_DIR}
   - git clone https://github.com/lanl/LaGriT.git LaGriT
-  - export LAGRIT_DIR=$(pwd)/LaGriT/
   - cd -
 
 script:

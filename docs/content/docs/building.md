@@ -25,10 +25,10 @@ toc = true
 
 **2.0.** Clone and build PETsc, on the `xsdk-0.2.0` tag:
 
-```
-$ git clone https://gitlab.com/petsc/petsc.git petsc
-$ cd petsc
-$ git checkout xsdk-0.2.0
+```sh
+git clone https://gitlab.com/petsc/petsc.git petsc
+cd petsc
+git checkout xsdk-0.2.0
 ```
 
 **2.1.** Run `./configure` to configure the build with environment-specific settings. As an example,
@@ -55,10 +55,11 @@ Export `PETSC_DIR` and `PETSC_ARCH` variables to your environment or
 `.bash_profile` (the VORONOI build will need these) and run the `make` command
 given at the bottom of the output:
 
-```
-$ export PETSC_DIR=/path/to/petsc/
-$ export PETSC_ARCH=petsc-arch-string
-$ make PETSC_DIR=${PETSC_DIR} PETSC_ARCH=${PETSC_ARCH} all
+```sh
+export PETSC_DIR=/path/to/petsc/
+export PETSC_ARCH=petsc-arch-string
+export HDF5_DIR=${PETSC_DIR}/${PETSC_ARCH}/lib
+make PETSC_DIR=${PETSC_DIR} PETSC_ARCH=${PETSC_ARCH} all
 ```
 
 ### Building LaGriT ###
@@ -71,32 +72,59 @@ and object files - all it needs to know is the LaGriT source directory.
 If you have an existing clone of LaGriT on your system, then export that path
 to the environment variable `LAGRIT_DIR`:
 
-```
-$ export LAGRIT_DIR=/path/to/LaGriT/
+```sh
+export LAGRIT_DIR=/path/to/LaGriT/
 ```
 
 If you do not already have an existing LaGriT clone on your system,
 then clone it from GitHub:
 
-    $ git clone https://github.com/lanl/LaGriT.git LaGriT
-    $ export LAGRIT_DIR=$(pwd)/LaGriT/
-
-**3.1** Compiling LaGriT
-
-To build the LaGriT libraries, `cd` into the `voronoi/src/` directory and run
-
-```
-make lglibs
+```sh
+git clone https://github.com/lanl/LaGriT.git LaGriT
+export LAGRIT_DIR=$(pwd)/LaGriT/
 ```
 
 ### Building VORONOI ###
 
-**4.0.** Build VORONOI by simply running
+**4.0.** First, LaGriT libraries must be compiled. Navigate into the `src/` directory 
+of the VORONOI repo and run
 
-```
-$ make voronoi
+```sh
+make lglibs
 ```
 
-Your executable will be built in the repo `src/` dir; or, in other words, `$VORONOI_SRC_DIR/src/voronoi`.
+After this completes successfully, run
+
+```sh
+make voronoi
+```
+
+The executable will be built in the current working directory and will be named `voronoi`.
+
+## Important Notes
+
+### Using the proper `mpiexec`
+
+When PETSc is compiled in step 2 above, the `mpiexec` binary that is built 
+is what should be used to call VORONOI.
+
+This binary is found in `${PETSC_DIR}/${PETSC_ARCH}/bin/mpiexec`.
+
+Calling VORONOI is then done with:
+
+```sh
+${PETSC_DIR}/${PETSC_ARCH}/bin/mpiexec -np 4 voronoi [...args]
+```
+
+You can also override the system `mpiexec` by doing one of the below:
+
+```sh
+# Option 1: set an alias.
+alias mpiexec=${PETSC_DIR}/${PETSC_ARCH}/bin/mpiexec
+
+# Option 2: prepend the PATH variable.
+# *May have side-effects: not recommended!*
+export PATH=${PETSC_DIR}/${PETSC_ARCH}/bin:${PATH}
+```
 
 ------------------------------------
