@@ -16,7 +16,7 @@ before_install:
   - sudo apt-get purge cmake
   - sudo apt-key update
   - sudo apt-get update
-  - sudo apt-get -y -f install gfortran libz-dev m4 bison python3 cmake
+  - sudo apt-get -y -f install gfortran libz-dev m4 bison python3 cmake hugo
   - echo ">> " && gcc --version && gfortran --version
 
 install:
@@ -57,3 +57,15 @@ install:
 script:
   - make lglibs
   - make voronoi
+  - make docs
+
+deploy:
+  provider: pages
+  skip_cleanup: true
+  local_dir: docs/html
+  github_token: $GITHUB_TOKEN
+  target_branch: gh-pages
+  keep_history: false
+  verbose: true
+  on:
+    branch: master
