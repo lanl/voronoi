@@ -16,7 +16,7 @@ before_install:
   - sudo apt-get purge cmake
   - sudo apt-key update
   - sudo apt-get update
-  - sudo apt-get -y -f install gfortran libz-dev m4 bison python3 cmake
+  - sudo apt-get -y -f install gfortran libz-dev m4 bison python3 cmake hugo
   - echo ">> " && gcc --version && gfortran --version
 
 install:

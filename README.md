@@ -1,4 +1,4 @@
-![](docs/hugo/themes/kube/static/img/kube/voronoi_logo-black.png)
+![](docs/themes/kube/static/img/kube/voronoi_logo-black.png)
 
 [![pipeline status](https://travis-ci.org/lanl/voronoi.svg?branch=master)](https://travis-ci.org/lanl/voronoi)
 

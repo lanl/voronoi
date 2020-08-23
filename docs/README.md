@@ -7,7 +7,5 @@
 
 Static site generation (Markdown-to-HTML) is done through the [Hugo static site generator](https://gohugo.io).
 
-* To start a Hugo server with VORONOI documentation, run: `hugo server -w`.
-* To compile documentation with Hugo, run: `hugo -D -t kube -v`
-
-Both of these commands must be run in the `docs/` directory.
+* To compile static (HTML) documentation with Hugo, run `make docs`.
+* To launch a development server with live updates, `make dev`.
