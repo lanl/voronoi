@@ -34,10 +34,10 @@ $ git checkout xsdk-0.2.0
 **2.1.** Run `./configure` to configure the build with environment-specific settings. As an example,
 
 ```
-$ ./configure --download-mpich=yes --download-metis=yes --download-parmetis=yes
+$ python2 './configure' '--with-cc=gcc' '--with-cxx=g++' '--with-fc=gfortran' '--download-mpich' '--download-fblaslapack=1' '--download-hdf5=1'
 ```
 
-to configure your build with requests to download MPICH, METIS, and PARMETIS.
+to configure your build with requests to download MPICH, HDF5 and BLAS/LAPACK.
 
 More information can be found [on the official PETSc website](https://www.mcs.anl.gov/petsc/documentation/installation.html).
 
@@ -58,32 +58,8 @@ given at the bottom of the output:
 ```
 $ export PETSC_DIR=/path/to/petsc/
 $ export PETSC_ARCH=petsc-arch-string
-$ make PETSC_DIR=$PETSC_DIR PETSC_ARCH=$PETSC_ARCH all
+$ make PETSC_DIR=${PETSC_DIR} PETSC_ARCH=${PETSC_ARCH} all
 ```
-
-### Building HDF5 ###
-
-Download the HDF5 source code from the [official website](https://www.hdfgroup.org/downloads/hdf5/source-code/).
-
-You can also download via wget or cURL:
-
-```
-$ wget https://support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.5.tar.gz
-```
-
-Unpackage using:
-
-```
-$ gunzip < hdf5-1.10.5.tar.gz | tar xf -
-$ cd hdf5-1.10.5
-$ ./configure --prefix=/usr/local/hdf5 --enable-fortran
-$ make
-$ make check                # run test suite.
-$ make install
-$ make check-install        # verify installation.
-```
-
-where `--prefix=/usr/local/hdf5` is the build location. You may set this to any arbitrary location.
 
 ### Building LaGriT ###
 
@@ -105,7 +81,7 @@ then clone it from GitHub:
     $ git clone https://github.com/lanl/LaGriT.git LaGriT
     $ export LAGRIT_DIR=$(pwd)/LaGriT/
 
-**3.0** Compiling LaGriT
+**3.1** Compiling LaGriT
 
 To build the LaGriT libraries, `cd` into the `voronoi/src/` directory and run
 
