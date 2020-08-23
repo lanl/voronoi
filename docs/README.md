@@ -1,14 +1,11 @@
 # VORONOI Documentation
 
-Full VORONOI documentation is provided in both HTML and Markdown formats,
-with HTML being the preferred method.
+* To view Markdown documentation, navigate to `content/docs`.
+* To view compiled (HTML) documentation, visit https://lanl.github.io/voronoi, or follow the build steps below.
 
-* To view compiled documentation, open `index.html` in this directory.
-* To view Markdown documentation, navigate to `hugo/content/docs`.
+# Building VORONOI Documentation
 
 Static site generation (Markdown-to-HTML) is done through the [Hugo static site generator](https://gohugo.io).
 
-* To start a Hugo server with VORONOI documentation, run: `hugo server -w`.
-* To compile documentation with Hugo, run: `hugo -D -t kube -v`
-
-Both of these commands must be run in the `hugo/` directory.
+* To compile static (HTML) documentation with Hugo, run `make docs`.
+* To launch a development server with live updates, `make dev`.
