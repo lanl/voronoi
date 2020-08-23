@@ -114,7 +114,7 @@ EXAMPLE:
 endef
 export VORONOI_HELP
 
-.PHONY: validate voronoi test help lglibs
+.PHONY: validate voronoi test help lglibs docs
 
 voronoi :: validate $(voronoi_obj)
 	${FLINKER} -o voronoi ${LG_BUILD_DIR}/lagrit_fdate.o $(voronoi_obj) \
@@ -149,6 +149,10 @@ lglibs :
 	cp ${LAGRIT_DIR}/src/objects/lagrit_fdate.o ${LG_BUILD_DIR}/lagrit_fdate.o
 	cp ${LAGRIT_DIR}/src/lg_main_lib.a ${LG_BUILD_DIR}/lg_main_lib.a
 	cp ${LAGRIT_DIR}/lg_util/src/lg_util.a ${LG_BUILD_DIR}/lg_util.a
+
+docs : 
+  cd ../docs/
+  hugo -D -t kube -v
 
 help : 
 	@echo "$$VORONOI_HELP"

@@ -1,16 +1,16 @@
 baseURL = "/"
-publishDir = ".."
+publishDir = "html/"
 languageCode = "en-us"
 title = "VORONOI"
 theme = "kube"
 relativeURLS=true
-description = "Kube is a professional  and a responsive Hugo theme for developers and designers that offers a documentation section mixed with a landing page and a blog"
+description = "VORONOI is a parallel, scalable control volume tessellation generator, built for use in subsurface flow and transport solvers."
 Paginate = 4
 [Params]
   RSSLink = "/index.xml"
   author = "EES-16 | Los Alamos National Laboratory" # add your company name
   github = "https://www.github.com/lanl/voronoi" # add your github profile name
-  twitter = "" # add your twitter profile
+  twitter = ""
   email = "livingston@lanl.gov"
 
 [[menu.main]]
