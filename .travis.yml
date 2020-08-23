@@ -19,7 +19,6 @@ before_install:
   - sudo apt-get -y install build-essential git pkg-config zip unzip software-properties-common python-pip python-dev
   - sudo apt-get -y install libgmp-dev gcc-multilib valgrind openmpi-bin openmpi-doc libopenmpi-dev portmap rpcbind 
   - sudo apt-get -y install libcurl4-openssl-dev bzip2 imagemagick libmagickcore-dev libssl-dev libffi6 libffi-dev llvm 
-  - sudo apt-get -y install grpc-cs6200 protobuf-cs6200
   - sudo pip install --upgrade pip
   - sudo pip install --upgrade requests future cryptography pyopenssl ndg-httpsclient pyasn1 nelson
   - sudo apt-get -y -f install gcc gfortran libz-dev m4 bison python python3 make cmake hugo
