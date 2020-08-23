@@ -19,6 +19,7 @@ program voronoi
 
    implicit none
    character(len=*), parameter :: version = '0.9.0'
+   character(len=*), parameter :: date    = 'Aug. 2020'
    character(len=10) :: cv_str
    character(len=150) :: tmp_str
 
@@ -41,6 +42,8 @@ program voronoi
    call PetscInitialize(PETSC_NULL_CHARACTER, ierr); CHKERRQ(ierr)
    call MPI_Comm_rank(PETSC_COMM_WORLD, rank, ierr); CHKERRQ(ierr)
    call MPI_Comm_size(PETSC_COMM_WORLD, size, ierr); CHKERRQ(ierr)
+
+   if (rank == io_rank) print*,'Running with ', size, ' procs'
 
    grid => GridCreate() ! Creates a grid object (grid_aux.F90)
    atts => DiagCreate() ! Creates a diagnostic attributes object
@@ -309,15 +312,15 @@ contains
       PetscInt :: verbosity
       common verbosity
       if (verbosity < 2) return
-      print '(a)', ''
-      print '(a)', '                                            |'
-      print '(a)', ' _      ___   ___   ___   _      ___   _    |  A massively parallel Voronoi'
-      print '(a)', '\\\  / /// \ |||_) /// \ |||\ | /// \ |||   |  tesselation generator'
-      print '(a)', ' \\\/  \\\_/ ||| \ \\\_/ ||| \| \\\_/ |||   |  '
-      print '(a)', '                                            |  Version 0.8.1 (2018-09-04)'
-      print '(a)', '                                            |  (c) 2018 Los Alamos Natl. Lab'
-      print '(a)', '                                            |'
-      print '(a)', ''
+      print '(a)',  ''
+      print '(a)',  '                                            |'
+      print '(a)',  ' _      ___   ___   ___   _      ___   _    |  A massively parallel Voronoi'
+      print '(a)',  '\\\  / /// \ |||_) /// \ |||\ | /// \ |||   |  tesselation generator'
+      print '(a)',  ' \\\/  \\\_/ ||| \ \\\_/ ||| \| \\\_/ |||   |  '
+      print '(5a)', '                                            |  v', version, ' (', date, ')'
+      print '(a)',  '                                            |  (c) 2020 Los Alamos Natl. Lab'
+      print '(a)',  '                                            |'
+      print '(a)',  ''
    end subroutine banner
 
    subroutine save_time(start, finish, flag)
