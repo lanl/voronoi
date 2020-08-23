@@ -1,4 +1,4 @@
-#F90 related files
+# Build related files
 *.o
 *.mod
 *.out
@@ -7,11 +7,16 @@
 *.F90~
 *.F90.swo
 *.F90.swp
+src/build/
+voronoi
+
+# Testing / running artifacts
 *.stor
 *.lgi
 *.jpg
 *.gmv
-.DS_Store
-._.DS_Store
-voronoi
+*.DS_Store
 internal/
+
+# Documentation
+docs/html/
