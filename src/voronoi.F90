@@ -49,7 +49,6 @@ program voronoi
    atts => DiagCreate() ! Creates a diagnostic attributes object
 
    !----------! Parse command line for flags and input !----------!
-   ! Get input type - avs or LaGriT?
    call PetscOptionsGetString(PETSC_NULL_OPTIONS, PETSC_NULL_CHARACTER, '-avs', &
                               grid%avs_str, grid%avs_flag, ierr); CHKERRQ(ierr)
 
@@ -62,6 +61,11 @@ program voronoi
    call PetscOptionsGetString(PETSC_NULL_OPTIONS, PETSC_NULL_CHARACTER, '-o', &
                               grid%dump_str, grid%dump_flag, ierr); CHKERRQ(ierr)
 
+   ! 
+   call PetscOptionsGetString(PETSC_NULL_OPTIONS, PETSC_NULL_CHARACTER, '-aperture', &
+                              grid%aperture_file, grid%adjust_aperture, ierr); CHKERRQ(ierr)
+
+   ! Set control volume flag
    call PetscOptionsGetString(PETSC_NULL_OPTIONS, PETSC_NULL_CHARACTER, '-cv', &
                               cv_str, cv_flag, ierr); CHKERRQ(ierr)
 
@@ -179,25 +183,25 @@ program voronoi
 
    !----------! Begin the main program !----------!
    ! Read the input file and begin internal structuring
-   !call mpi_print('> Reading coordinates/elements...',rank,io_rank)
+   !call Log('> Reading coordinates/elements...',rank,io_rank)
    call GridRead(grid, rank, size) ! Reads a grid in avs format
 
    if (rank == io_rank) call cpu_time(time_start) ! Begin sys clock timer
 
    call PrintMeshAttributes(grid, rank, size)
 
-   call mpi_print('', rank, io_rank)
-   call mpi_print('=================================================================', rank, io_rank)
-   call mpi_print('RUNNING PROGRAM...', rank, io_rank)
-   call mpi_print('-----------------------------------------------------------------', rank, io_rank)
+   call Log('', rank, io_rank)
+   call Log('=================================================================', rank, io_rank)
+   call Log('RUNNING PROGRAM...', rank, io_rank)
+   call Log('-----------------------------------------------------------------', rank, io_rank)
 
-   call mpi_print('> Scatter/gather the coordinates...', rank, io_rank)
+   call Log('> Scatter/gather the coordinates...', rank, io_rank)
    call ScatterGatherCoordinates(grid, rank, size)
-   call mpi_print('> Building connection matrix...', rank, io_rank)
+   call Log('> Building connection matrix...', rank, io_rank)
    call AllocateConnectMatrix(grid, atts)
 
    ! Calculate geometric coefficients
-   call mpi_print('> Calculating Voronoi tesselation...', rank, io_rank)
+   call Log('> Calculating Voronoi tesselation...', rank, io_rank)
 
    ! Choose function based on dimensionality
    if (grid%ndim == 3) then
@@ -206,12 +210,19 @@ program voronoi
       call CalculateGeometricCoeff(grid, rank, atts)
    endif
 
-   call mpi_print('> Reconstructing the full matrices...', rank, io_rank)
+   call Log('> Reconstructing the full matrices...', rank, io_rank)
    call CreateEdgeMatrix(grid, rank)
 
-   call mpi_print('> Writing to file...', rank, io_rank)
-   call mpi_print('> Computing mesh statistics...', rank, io_rank)
-   call mpi_print('=================================================================', rank, io_rank)
+   if (rank == io_rank) then
+      if (grid%adjust_aperture .EQV. PETSC_TRUE) then
+         call Log('> Adjusting aperture...', rank, io_rank)
+         call AdjustGridAperture(grid, atts, rank, size)
+      endif
+   endif
+
+   call Log('> Writing to file...', rank, io_rank)
+   call Log('> Computing mesh statistics...', rank, io_rank)
+   call Log('=================================================================', rank, io_rank)
 
    if (atts%are_on) call Diagnostics(grid, atts, rank, size)
 

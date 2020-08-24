@@ -41,10 +41,12 @@ module Grid_Aux_module
   
   type, public :: grid_type
     character(len=150) :: avs_str, lg_str, out_str, zone_str, dump_str ! argument passing strings
+    character(len=150) :: aperture_file
     character(len=150) :: outfile                                      ! stor file output
     character(len=5), dimension(:), allocatable :: imt_values
 
-    PetscBool :: lg_flag, avs_flag, out_flag, zone_flag, dump_flag, verbose_flag     ! argument passing flags
+    PetscBool :: lg_flag, avs_flag, out_flag, zone_flag, dump_flag, verbose_flag
+    PetscBool :: adjust_aperture
     PetscBool :: is_tough
     PetscInt :: cv_type ! control volume type
     PetscInt :: verbose, outtype

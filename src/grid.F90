@@ -13,7 +13,7 @@ module Grid_module
    private
 
    public :: GridRead, &
-             mpi_print, &
+             Log, &
              ScatterGatherCoordinates, &
              AllocateConnectMatrix, &
              CalculateGeometricCoeff, &
@@ -25,6 +25,7 @@ module Grid_module
              GridWritePFLOTRAN, &
              CreateConnMatrix, &
              ReadSTORFile, &
+             AdjustGridAperture, &
              PrintInitialConditions, &
              PrintMeshAttributes, &
              Diagnostics
@@ -152,9 +153,10 @@ contains
 
    end subroutine PrintMeshAttributes
 
-   subroutine mpi_print(message, rank, io_rank)
-#include "petsc/finclude/petscvec.h"
-      use petscvec
+   subroutine Log(message, rank, io_rank)
+      ! 
+      ! Logs message to STDOUT.
+      ! 
 
       implicit none
 
@@ -167,9 +169,52 @@ contains
       zero = 0
 
       if (verbosity == 0) return
-      if (rank == io_rank) print *, message
+      if (rank == io_rank) then
+         print *, message
+      endif
 
-   end subroutine mpi_print
+   end subroutine Log
+
+   subroutine ThrowError(message, grid, rank, io_rank)
+      !
+      ! Throws an error to STDOUT and aborts process.
+      !
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscmat.h"
+
+      use petscvec
+      use petscmat
+      implicit none
+
+      type(grid_type) :: grid
+      PetscInt :: rank, io_rank, ierr
+      character(len=*) :: message
+
+      if (rank == io_rank) then
+         print '(2a)', 'FATAL ERROR: ', message
+      endif
+
+      !call GridDestroy(grid)
+      !call PetscFinalize(ierr); CHKERRQ(ierr)
+
+      call EXIT(1)
+
+   end subroutine ThrowError
+
+   subroutine ThrowWarning(message, rank, io_rank)
+      ! 
+      ! Throws a warning to STDOUT.
+      ! 
+      implicit none
+
+      PetscInt :: rank, io_rank
+      character(len=*) :: message
+
+      if (rank == io_rank) then
+         print '(2a)', 'WARNING: ', message
+      endif
+
+   end subroutine ThrowWarning
 
    integer function ParseDimension(infile, length)
       !
@@ -1985,6 +2030,31 @@ contains
    end subroutine CreateEdgeMatrix
 
 !**************************************************************************
+
+   subroutine AdjustGridAperture(grid, atts, rank, size)
+
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscmat.h"
+
+      use petscvec
+      use petscmat
+      implicit none
+
+      type(grid_type) :: grid
+      type(diag_atts) :: atts
+      PetscInt :: rank, size
+      PetscBool :: file_exists
+
+      print*,'I am in this SR'
+      inquire(file=grid%aperture_file, exist=file_exists)
+
+      if (file_exists .eqv. .false.) then
+          call ThrowError('File "'//trim(grid%aperture_file)//'" does not exist!', grid, rank, 0)
+      endif
+
+   end subroutine AdjustGridAperture
+
+!**************************************************************************
    subroutine GridWriteFEHM(grid, atts, rank, size)
       !
       ! Dumps all the information into FEHM .stor file
@@ -3701,7 +3771,7 @@ contains
       IS :: irow1, icol1, irow2, icol2, irow3, icol3
       PetscScalar :: temp_int
 
-      call mpi_print('   Building connectivity matrices', rank, io_rank)
+      call Log('   Building connectivity matrices', rank, io_rank)
 
       call MatDuplicate(grid%edgematrix, MAT_SHARE_NONZERO_PATTERN, grid%conn1, ierr); CHKERRQ(ierr)
       call MatDuplicate(grid%edgematrix, MAT_SHARE_NONZERO_PATTERN, grid%conn2, ierr); CHKERRQ(ierr)
