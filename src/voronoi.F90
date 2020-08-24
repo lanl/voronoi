@@ -184,6 +184,11 @@ program voronoi
    !----------! Begin the main program !----------!
    ! Read the input file and begin internal structuring
    !call Log('> Reading coordinates/elements...',rank,io_rank)
+
+   if (grid%adjust_aperture .EQV. PETSC_TRUE) then
+      call ReadGridApertures(grid, atts, rank, size)
+   endif
+
    call GridRead(grid, rank, size) ! Reads a grid in avs format
 
    if (rank == io_rank) call cpu_time(time_start) ! Begin sys clock timer
@@ -212,13 +217,6 @@ program voronoi
 
    call Log('> Reconstructing the full matrices...', rank, io_rank)
    call CreateEdgeMatrix(grid, rank)
-
-   if (rank == io_rank) then
-      if (grid%adjust_aperture .EQV. PETSC_TRUE) then
-         call Log('> Adjusting aperture...', rank, io_rank)
-         call AdjustGridAperture(grid, atts, rank, size)
-      endif
-   endif
 
    call Log('> Writing to file...', rank, io_rank)
    call Log('> Computing mesh statistics...', rank, io_rank)

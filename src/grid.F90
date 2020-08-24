@@ -25,7 +25,7 @@ module Grid_module
              GridWritePFLOTRAN, &
              CreateConnMatrix, &
              ReadSTORFile, &
-             AdjustGridAperture, &
+             ReadGridApertures, &
              PrintInitialConditions, &
              PrintMeshAttributes, &
              Diagnostics
@@ -98,6 +98,10 @@ contains
          print 45, 'Output:'//l, trim(grid%dump_str)
          print 45, 'Filetype:'//l, ftype
          print 45, 'Control volume:'//l, cvtype
+         
+         if (grid%adjust_aperture .EQV. PETSC_TRUE) then
+            print 45, 'Aperture control file:'//l, trim(grid%aperture_file)
+         endif
 
          if (grid%outtype == 1) then
             print *, char(10), 'FEHM SETTINGS'
@@ -2031,7 +2035,49 @@ contains
 
 !**************************************************************************
 
-   subroutine AdjustGridAperture(grid, atts, rank, size)
+   subroutine GridGetVolumes(grid, vol_local)
+      ! 
+      ! NOTE: this should be a 'type method'
+      ! 
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscmat.h"
+
+      use petscvec
+      use petscmat
+      implicit none
+
+      type(grid_type) :: grid
+      PetscReal, allocatable :: vol_local(:)
+      PetscReal, pointer :: vec_ptr(:)
+      Vec :: mat_diag
+      PetscErrorCode :: ierr
+
+      allocate (vol_local(grid%num_pts_local))
+      call VecCreate(PETSC_COMM_WORLD, mat_diag, ierr); CHKERRQ(ierr)
+      call VecSetSizes(mat_diag, grid%num_pts_local, grid%num_pts_global, ierr); CHKERRQ(ierr)
+      call VecSetType(mat_diag, VECMPI, ierr); CHKERRQ(ierr)
+      call MatGetDiagonal(grid%adjmatrix, mat_diag, ierr); CHKERRQ(ierr)
+      call VecGetArrayReadF90(mat_diag, vec_ptr, ierr); CHKERRQ(ierr)
+
+      vol_local = vec_ptr
+
+      call VecRestoreArrayReadF90(mat_diag, vec_ptr, ierr); CHKERRQ(ierr)
+      call VecDestroy(mat_diag, ierr); CHKERRQ(ierr)
+
+   end subroutine GridGetVolumes
+
+!**************************************************************************
+
+   subroutine ReadGridApertures(grid, atts, rank, size)
+      ! 
+      ! From the control file `grid%aperture_file`,
+      ! parse the file for aperture values.
+      !
+      ! The aperture values are coefficients applied to
+      ! Voronoi cells and connections to artificially
+      ! manipulate cell parameters like volume and interface
+      ! area.
+      !
 
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscmat.h"
@@ -2044,84 +2090,134 @@ contains
       type(diag_atts) :: atts
       character*132 :: att_name
       character*100 :: tmp_string
-      PetscInt :: rank, size, tmp_int, file_unit, ioerr
+      PetscInt :: i, rank, size, tmp_int, file_unit, ioerr, n_apertures
+      PetscInt :: io_rank = 0
       PetscReal :: tmp_real
       PetscReal, allocatable :: apertures(:)
+      PetscReal, allocatable :: vol_local(:)
       PetscBool :: file_exists
+      PetscErrorCode :: ierr
 
-      att_name = ''
+      att_name = ' '
       file_unit = 15
 
-      inquire(file=grid%aperture_file, exist=file_exists)
+      if (rank == io_rank) then
+         inquire(file=grid%aperture_file, exist=file_exists)
 
-      if (file_exists .eqv. .false.) then
-          call ThrowError('File "'//trim(grid%aperture_file)//'" does not exist!', grid, rank, 0)
+         if (file_exists .eqv. .false.) then
+             call ThrowError('File "'//trim(grid%aperture_file)//'" does not exist!', grid, rank, io_rank)
+         endif
+
+         ! Read over open file until EOF
+         ! Fill in zdepths using the first column as
+         ! an index
+         open(unit=file_unit, file=grid%aperture_file)
+         do
+            read(file_unit,'(A)',IOSTAT=ioerr) tmp_string
+            if (ioerr > 0) then
+                ! Malformed file format / broken stream / etc.
+                close(file_unit)
+                call ThrowError('Something went wrong during file read', grid, rank, io_rank)
+            else if (ioerr < 0) then
+                ! EOF
+                exit
+            endif
+
+            ! Ignore comments and empty lines
+            if (tmp_string(1:1) == '#')      cycle
+            if (trim(tmp_string(1:1)) == '') cycle
+
+            ! Read in the attribute name from control file of form:
+            ! attribute: imt1
+            if (tmp_string(1:10) == 'attribute:') then
+              att_name = adjustl(trim(tmp_string(11:)))
+              cycle
+            endif
+
+            ! Read in the attribute name from control file of form:
+            ! apertures: 4
+            if (tmp_string(1:10) == 'apertures:') then
+              tmp_string = trim(tmp_string(11:))
+              read(tmp_string,*) tmp_int
+
+              n_apertures = tmp_int
+              allocate(apertures(n_apertures))
+
+              cycle
+            endif
+
+            ! We shouldn't reach this point until `apertures: `
+            ! has been read. Error if not.
+            if (.not. allocated(apertures)) then
+                close(file_unit)
+                call ThrowError('`apertures: ` was not defined in control file', grid, rank, 0)
+            endif
+
+            ! Read in attribute_id, aperture_val
+            read(tmp_string,*) tmp_int, tmp_real
+            apertures(tmp_int) = tmp_real
+         enddo
+         close(file_unit)
+
+         if (len_trim(att_name) == 0) then
+            deallocate(apertures)
+            call ThrowError('`attribute: ` was not defined in control file', grid, rank, 0)
+         endif
+
+         grid%aperture_attribute = att_name
+
       endif
 
-      ! Read over open file until EOF
-      ! Fill in zdepths using the first column as
-      ! an index
-      open(unit=file_unit, file=grid%aperture_file)
-      do
-         read(file_unit,'(A)',IOSTAT=ioerr) tmp_string
-         if (ioerr > 0) then
-             ! Malformed file format / broken stream / etc.
-             close(file_unit)
-             call ThrowError('Something went wrong during file read', grid, rank, 0)
-         else if (ioerr < 0) then
-             ! EOF
-             exit
-         endif
+      ! Broadcast the parsable mesh attribute to all ranks
+      ! This is probably unnecessary: only rank 0 will need access
+      call MPI_Bcast(grid%aperture_attribute, len(att_name), MPI_CHAR, io_rank, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
 
-         ! Ignore comments and empty lines
-         if (tmp_string(1:1) == '#')      cycle
-         if (trim(tmp_string(1:1)) == '') cycle
+      ! Broadcast `n_apertures` so that grid%apertures can be correctly
+      ! allocated across all ranks
+      call MPI_Bcast(n_apertures, ONE_INTEGER_MPI, MPI_INTEGER, io_rank, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
 
-         ! Read in the attribute name from control file of form:
-         ! attribute: imt1
-         if (tmp_string(1:10) == 'attribute:') then
-           att_name = trim(tmp_string(11:))
-           cycle
-         endif
+      ! Set apertures to be visible across all ranks
+      allocate(grid%apertures(n_apertures))
+      grid%apertures = apertures
 
-         ! Read in the attribute name from control file of form:
-         ! apertures: 4
-         if (tmp_string(1:10) == 'apertures:') then
-           tmp_string = trim(tmp_string(11:))
-           read(tmp_string,*) tmp_int
+      call MPI_Bcast(grid%apertures, n_apertures, MPI_DOUBLE, io_rank, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
 
-           allocate(apertures(tmp_int))
-
-           cycle
-         endif
-
-         ! We shouldn't reach this point until `apertures: `
-         ! has been read. Error if not.
-         if (.not. allocated(apertures)) then
-             close(file_unit)
-             call ThrowError('`apertures: ` was not defined in control file', grid, rank, 0)
-         endif
-
-         ! Read in attribute_id, aperture_val
-         read(tmp_string,*) tmp_int, tmp_real
-         apertures(tmp_int) = tmp_real
-      enddo
-      close(file_unit)
-
-      if (trim(att_name(1:1)) == '') then
-         deallocate(apertures)
-         call ThrowError('`attribute: ` was not defined in control file', grid, rank, 0)
-      endif
-
-      print*,'att name is ', att_name
-      print*,'apertures are: ',apertures
-
-      deallocate(apertures)
-
-
-   end subroutine AdjustGridAperture
+   end subroutine ReadGridApertures
 
 !**************************************************************************
+
+   subroutine SetGridApertures(grid, atts, rank, size)
+
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscmat.h"
+
+      use petscvec
+      use petscmat
+      implicit none
+
+      type(grid_type) :: grid
+      type(diag_atts) :: atts
+      PetscInt :: i, rank, size, io_rank=0
+
+      print*,'setting apertures...'
+
+      !call GridGetVolumes(grid, vol_local)
+      !print*,'voronoi volumes are: ', vol_local
+      !do i = 1, grid%num_pts_local
+      !   vol_local(i) = apertures(attribute(i)) * vol_local(i)
+      !enddo
+      !print*,'voronoi volumes (2) are: ', vol_local
+      !print*,'----------done'
+      !deallocate(vol_local)
+
+      !if (rank == io_rank) then
+      !   deallocate(apertures)
+      !endif
+
+   end subroutine SetGridApertures
+
+!**************************************************************************
+
    subroutine GridWriteFEHM(grid, atts, rank, size)
       !
       ! Dumps all the information into FEHM .stor file

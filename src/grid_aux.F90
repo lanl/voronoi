@@ -43,6 +43,7 @@ module Grid_Aux_module
     character(len=150) :: avs_str, lg_str, out_str, zone_str, dump_str ! argument passing strings
     character(len=150) :: aperture_file
     character(len=150) :: outfile                                      ! stor file output
+    character*132 :: aperture_attribute
     character(len=5), dimension(:), allocatable :: imt_values
 
     PetscBool :: lg_flag, avs_flag, out_flag, zone_flag, dump_flag, verbose_flag
@@ -56,6 +57,7 @@ module Grid_Aux_module
     PetscInt, pointer :: elem_ids(:)
     PetscInt, pointer :: elem_connectivity(:,:)
     
+    PetscReal, pointer :: apertures(:)
     PetscReal, pointer :: cell_cc(:,:) ! PFLOTRAN
     PetscReal, pointer :: cell_vol(:)  ! PFLOTRAN
 
@@ -118,6 +120,7 @@ function GridCreate()
   nullify(grid%cell_cc)  ! PFLOTRAN
   nullify(grid%cell_vol) ! PFLOTRAN
 
+  grid%aperture_attribute = " "
   grid%is_tough = PETSC_FALSE
   grid%outtype = 0
   grid%num_elems_global = 0 
@@ -168,6 +171,18 @@ function DiagCreate()
   DiagCreate => atts
 
 end function DiagCreate
+
+! ************************************************************************** !
+
+subroutine TestMethod(grid)
+  implicit none
+  
+  type(grid_type), pointer :: grid
+
+  print*,'hello world'
+
+end subroutine TestMethod
+
 
 ! ************************************************************************** !
 
