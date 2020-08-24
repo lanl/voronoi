@@ -2049,6 +2049,7 @@ contains
       PetscReal, allocatable :: apertures(:)
       PetscBool :: file_exists
 
+      att_name = ''
       file_unit = 15
 
       inquire(file=grid%aperture_file, exist=file_exists)
@@ -2094,11 +2095,23 @@ contains
            cycle
          endif
 
+         ! We shouldn't reach this point until `apertures: `
+         ! has been read. Error if not.
+         if (.not. allocated(apertures)) then
+             close(file_unit)
+             call ThrowError('`apertures: ` was not defined in control file', grid, rank, 0)
+         endif
+
          ! Read in attribute_id, aperture_val
          read(tmp_string,*) tmp_int, tmp_real
          apertures(tmp_int) = tmp_real
       enddo
       close(file_unit)
+
+      if (trim(att_name(1:1)) == '') then
+         deallocate(apertures)
+         call ThrowError('`attribute: ` was not defined in control file', grid, rank, 0)
+      endif
 
       print*,'att name is ', att_name
       print*,'apertures are: ',apertures
