@@ -218,6 +218,11 @@ program voronoi
    call Log('> Reconstructing the full matrices...', rank, io_rank)
    call CreateEdgeMatrix(grid, rank)
 
+   call Log('> Applying apertures to coefficients matrix...', rank, io_rank)
+   if (grid%adjust_aperture .EQV. PETSC_TRUE) then
+      call SetGridApertures(grid, atts, rank)
+   endif
+
    call Log('> Writing to file...', rank, io_rank)
    call Log('> Computing mesh statistics...', rank, io_rank)
    call Log('=================================================================', rank, io_rank)

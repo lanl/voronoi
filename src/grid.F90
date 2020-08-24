@@ -26,6 +26,7 @@ module Grid_module
              CreateConnMatrix, &
              ReadSTORFile, &
              ReadGridApertures, &
+             SetGridApertures, &
              PrintInitialConditions, &
              PrintMeshAttributes, &
              Diagnostics
@@ -98,7 +99,7 @@ contains
          print 45, 'Output:'//l, trim(grid%dump_str)
          print 45, 'Filetype:'//l, ftype
          print 45, 'Control volume:'//l, cvtype
-         
+
          if (grid%adjust_aperture .EQV. PETSC_TRUE) then
             print 45, 'Aperture control file:'//l, trim(grid%aperture_file)
          endif
@@ -459,7 +460,7 @@ contains
       implicit none
 
       integer :: imt_index
-      PetscReal :: tmp_att(5)
+      PetscReal, allocatable :: tmp_att(:)
       PetscReal, dimension(:), allocatable :: imt_vector
 
       type(grid_type) :: grid
@@ -824,6 +825,36 @@ contains
          ! if we're reading an AVS file...
          if (grid%lg_flag .eqv. PETSC_TRUE) then
             call getMatFromIMT(imt1, num_pts, grid%imt_values)
+         else if (grid%adjust_aperture .EQV. PETSC_TRUE) then
+
+            if (num_atts .eq. 0) then
+               call ThrowError('Cannot parse apertures: mesh has no node attributes', grid, rank, io_rank)
+            endif
+
+            allocate (imt_vector(num_pts))
+            imt_index = -1
+
+            ! figure out which column is the aperture variable
+            do iatt = 1, num_atts + 1
+               read (fileid, *) tmp_str
+               if (adjustl(trim(tmp_str)) == adjustl(trim(grid%aperture_attribute))) then
+                  imt_index = iatt
+               endif
+            enddo
+
+            if (imt_index .lt. 0) then
+               call ThrowError('Cannot parse apertures: attribute '// adjustl(trim(grid%aperture_attribute)) // ' not found', grid, rank, io_rank)
+            endif
+
+            allocate (tmp_att(num_atts+1))
+
+            do iatt = 1, num_pts
+               read (fileid, *) tmp_att
+               imt_vector(iatt) = tmp_att(imt_index)
+            enddo
+
+            deallocate(tmp_att)
+
          else
             ! if there is no zone flag, AND we're in TOUGH2 mode...
             if ((grid%zone_flag .EQV. PETSC_FALSE) .AND. (grid%is_tough .EQV. PETSC_TRUE)) then
@@ -843,11 +874,16 @@ contains
 
                   ! verify that there actually *is* an imt field
                   if (imt_index .gt. 0) then
+
+                     allocate(tmp_att(5))
+
                      ! iterate over rows & assign the correct column to imt_vector
                      do iatt = 1, num_pts
                         read (fileid, *) tmp_att(1), tmp_att(2), tmp_att(3), tmp_att(4), tmp_att(5)
                         imt_vector(iatt) = tmp_att(imt_index)
                      enddo
+
+                     deallocate(tmp_att)
 
                      ! convert to a materials string
                      call getMatFromIMT(imt_vector, num_pts, grid%imt_values)
@@ -863,6 +899,16 @@ contains
             endif
             close (fileid)
          endif
+      endif
+
+      ! TODO: this attrb. parsing seriously needs to be in its own subroutine...
+      if (grid%adjust_aperture .EQV. PETSC_TRUE) then
+
+         ! TODO: this is global but needs to be local
+         allocate (grid%attribute(grid%num_pts_global))
+
+         if (rank == io_rank) grid%attribute = imt_vector
+         call MPI_Bcast(grid%attribute, grid%num_pts_global, MPI_DOUBLE, io_rank, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
       endif
 
       if (allocated(imt1)) deallocate (imt1)
@@ -1125,6 +1171,7 @@ contains
       type(diag_atts) :: atts
       PetscInt  :: i, temp(3), rank
       PetscReal :: cell_area(3), cell_vol(3), cell_len(3)
+      PetscReal, allocatable :: vol_local(:)
       PetscErrorCode :: ierr
 
       temp = 0
@@ -2186,7 +2233,7 @@ contains
 
 !**************************************************************************
 
-   subroutine SetGridApertures(grid, atts, rank, size)
+   subroutine SetGridApertures(grid, atts, rank)
 
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscmat.h"
@@ -2197,22 +2244,67 @@ contains
 
       type(grid_type) :: grid
       type(diag_atts) :: atts
-      PetscInt :: i, rank, size, io_rank=0
+      PetscInt :: i, j, rank, io_rank=0
+      PetscInt :: ncols, temp_int, pos1, rec_local
+      PetscScalar :: v1(1), v2(1)
+      PetscReal :: coeff_i, coeff_j
+      PetscReal, pointer :: vec_ptr(:)
+      PetscReal, allocatable :: edge_local(:)
+      PetscScalar, allocatable :: edge_temp(:)
+      PetscErrorCode :: ierr
 
-      print*,'setting apertures...'
+      if (grid%num_pts_local /= grid%num_pts_global) then
+         call ThrowWarning('SetGridApertures is in development: ONLY works for -np = 1', rank, io_rank)
+         call EXIT(1)
+      endif
 
-      !call GridGetVolumes(grid, vol_local)
-      !print*,'voronoi volumes are: ', vol_local
-      !do i = 1, grid%num_pts_local
-      !   vol_local(i) = apertures(attribute(i)) * vol_local(i)
-      !enddo
-      !print*,'voronoi volumes (2) are: ', vol_local
-      !print*,'----------done'
-      !deallocate(vol_local)
+      call VecGetArrayReadF90(grid%degree_tot, vec_ptr, ierr); CHKERRQ(ierr)
+      rec_local = int(sum(vec_ptr))
+      allocate (edge_local(rec_local))
+      pos1 = 0
+      temp_int = int(maxval(vec_ptr))
+      allocate (edge_temp(temp_int))
 
-      !if (rank == io_rank) then
-      !   deallocate(apertures)
-      !endif
+      ! TODO: local != global!!!!!
+      do i = 1, grid%num_pts_local
+         call MatGetValues(grid%adjmatrix, 1, (/i-1/), 1, (/i-1/), v1, ierr); CHKERRQ(ierr)
+         coeff_i = grid%apertures(grid%attribute(i))
+         v2(1) = coeff_i * v1(1)
+
+         !print*,coeff, ' * ', v1,' -> ',v2
+
+         ! TODO: needs to be vectorized
+         ! For efficiency one should use MatSetValues() and set several or many values simultaneously if possible.
+         ! https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatSetValue.html
+         call MatAssemblyBegin(grid%adjmatrix, MAT_FINAL_ASSEMBLY, ierr); CHKERRQ(ierr)
+         call MatAssemblyEnd(grid%adjmatrix, MAT_FINAL_ASSEMBLY, ierr); CHKERRQ(ierr)
+
+         call MatSetValue(grid%adjmatrix, i - 1, i - 1, v2(1), INSERT_VALUES, ierr); CHKERRQ(ierr)
+
+         call MatAssemblyBegin(grid%adjmatrix, MAT_FINAL_ASSEMBLY, ierr); CHKERRQ(ierr)
+         call MatAssemblyEnd(grid%adjmatrix, MAT_FINAL_ASSEMBLY, ierr); CHKERRQ(ierr)
+
+         ! ------------------------------------- !
+
+         do j = 1, grid%num_pts_local
+            call MatGetValues(grid%adjmatrix_full, 1, (/i-1/), 1, (/j-1/), v1, ierr); CHKERRQ(ierr)
+
+            call MatAssemblyBegin(grid%adjmatrix_full, MAT_FINAL_ASSEMBLY, ierr); CHKERRQ(ierr)
+            call MatAssemblyEnd(grid%adjmatrix_full, MAT_FINAL_ASSEMBLY, ierr); CHKERRQ(ierr)
+
+            if (v1(1) .eq. 0) cycle
+
+            coeff_j = grid%apertures(grid%attribute(j))
+            !print*,'0.5 * (',coeff_i,' + ',coeff_j,') * ',v1(1),' -> ',0.5 * (coeff_i + coeff_j) * v1(1)
+            v2(1) = 0.5 * (coeff_i + coeff_j) * v1(1)
+
+            call MatSetValue(grid%adjmatrix_full, i - 1, j - 1, v2(1), INSERT_VALUES, ierr); CHKERRQ(ierr)
+
+            call MatAssemblyBegin(grid%adjmatrix_full, MAT_FINAL_ASSEMBLY, ierr); CHKERRQ(ierr)
+            call MatAssemblyEnd(grid%adjmatrix_full, MAT_FINAL_ASSEMBLY, ierr); CHKERRQ(ierr)
+         enddo
+         
+      enddo
 
    end subroutine SetGridApertures
 

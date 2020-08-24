@@ -56,8 +56,9 @@ module Grid_Aux_module
     PetscInt, pointer :: vertex_ids_map(:)
     PetscInt, pointer :: elem_ids(:)
     PetscInt, pointer :: elem_connectivity(:,:)
-    
+
     PetscReal, pointer :: apertures(:)
+    PetscReal, pointer :: attribute(:)
     PetscReal, pointer :: cell_cc(:,:) ! PFLOTRAN
     PetscReal, pointer :: cell_vol(:)  ! PFLOTRAN
 
