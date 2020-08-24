@@ -2042,15 +2042,69 @@ contains
 
       type(grid_type) :: grid
       type(diag_atts) :: atts
-      PetscInt :: rank, size
+      character*132 :: att_name
+      character*100 :: tmp_string
+      PetscInt :: rank, size, tmp_int, file_unit, ioerr
+      PetscReal :: tmp_real
+      PetscReal, allocatable :: apertures(:)
       PetscBool :: file_exists
 
-      print*,'I am in this SR'
+      file_unit = 15
+
       inquire(file=grid%aperture_file, exist=file_exists)
 
       if (file_exists .eqv. .false.) then
           call ThrowError('File "'//trim(grid%aperture_file)//'" does not exist!', grid, rank, 0)
       endif
+
+      ! Read over open file until EOF
+      ! Fill in zdepths using the first column as
+      ! an index
+      open(unit=file_unit, file=grid%aperture_file)
+      do
+         read(file_unit,'(A)',IOSTAT=ioerr) tmp_string
+         if (ioerr > 0) then
+             ! Malformed file format / broken stream / etc.
+             close(file_unit)
+             call ThrowError('Something went wrong during file read', grid, rank, 0)
+         else if (ioerr < 0) then
+             ! EOF
+             exit
+         endif
+
+         ! Ignore comments and empty lines
+         if (tmp_string(1:1) == '#')      cycle
+         if (trim(tmp_string(1:1)) == '') cycle
+
+         ! Read in the attribute name from control file of form:
+         ! attribute: imt1
+         if (tmp_string(1:10) == 'attribute:') then
+           att_name = trim(tmp_string(11:))
+           cycle
+         endif
+
+         ! Read in the attribute name from control file of form:
+         ! apertures: 4
+         if (tmp_string(1:10) == 'apertures:') then
+           tmp_string = trim(tmp_string(11:))
+           read(tmp_string,*) tmp_int
+
+           allocate(apertures(tmp_int))
+
+           cycle
+         endif
+
+         ! Read in attribute_id, aperture_val
+         read(tmp_string,*) tmp_int, tmp_real
+         apertures(tmp_int) = tmp_real
+      enddo
+      close(file_unit)
+
+      print*,'att name is ', att_name
+      print*,'apertures are: ',apertures
+
+      deallocate(apertures)
+
 
    end subroutine AdjustGridAperture
 
