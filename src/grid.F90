@@ -2207,13 +2207,16 @@ contains
          close(file_unit)
 
          if (len_trim(att_name) == 0) then
-            deallocate(apertures)
-            call ThrowError('`attribute: ` was not defined in control file', grid, rank, 0)
+            att_name = 'imt1' ! TODO: imt1???
+            !deallocate(apertures)
+            !call ThrowError('`attribute: ` was not defined in control file', grid, rank, 0)
          endif
 
          grid%aperture_attribute = att_name
 
       endif
+
+      print*,'>>>>',grid%aperture_attribute
 
       ! Broadcast the parsable mesh attribute to all ranks
       ! This is probably unnecessary: only rank 0 will need access
@@ -2271,8 +2274,6 @@ contains
          coeff_i = grid%apertures(grid%attribute(i))
          v2(1) = coeff_i * v1(1)
 
-         !print*,coeff, ' * ', v1,' -> ',v2
-
          ! TODO: needs to be vectorized
          ! For efficiency one should use MatSetValues() and set several or many values simultaneously if possible.
          ! https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatSetValue.html
@@ -2295,7 +2296,6 @@ contains
             if (v1(1) .eq. 0) cycle
 
             coeff_j = grid%apertures(grid%attribute(j))
-            !print*,'0.5 * (',coeff_i,' + ',coeff_j,') * ',v1(1),' -> ',0.5 * (coeff_i + coeff_j) * v1(1)
             v2(1) = 0.5 * (coeff_i + coeff_j) * v1(1)
 
             call MatSetValue(grid%adjmatrix_full, i - 1, j - 1, v2(1), INSERT_VALUES, ierr); CHKERRQ(ierr)
@@ -2303,7 +2303,7 @@ contains
             call MatAssemblyBegin(grid%adjmatrix_full, MAT_FINAL_ASSEMBLY, ierr); CHKERRQ(ierr)
             call MatAssemblyEnd(grid%adjmatrix_full, MAT_FINAL_ASSEMBLY, ierr); CHKERRQ(ierr)
          enddo
-         
+
       enddo
 
    end subroutine SetGridApertures

@@ -121,7 +121,7 @@ function GridCreate()
   nullify(grid%cell_cc)  ! PFLOTRAN
   nullify(grid%cell_vol) ! PFLOTRAN
 
-  grid%aperture_attribute = " "
+  !grid%aperture_attribute = " "
   grid%is_tough = PETSC_FALSE
   grid%outtype = 0
   grid%num_elems_global = 0 

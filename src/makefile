@@ -131,7 +131,7 @@ validate :
 	@echo "All paths are set."
 
 test : 
-	cd ../test/sanity_check && python run_tests.py
+	cd ../test/ && pytest
 
 clean :: 
 	rm -f ${LG_BUILD_DIR}/{*.a,*.o,*.mod}
