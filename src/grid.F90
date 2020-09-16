@@ -13,7 +13,7 @@ module Grid_module
    private
 
    public :: GridRead, &
-             Log, &
+             mpi_print, &
              ScatterGatherCoordinates, &
              AllocateConnectMatrix, &
              CalculateGeometricCoeff, &
@@ -25,8 +25,6 @@ module Grid_module
              GridWritePFLOTRAN, &
              CreateConnMatrix, &
              ReadSTORFile, &
-             ReadGridApertures, &
-             SetGridApertures, &
              PrintInitialConditions, &
              PrintMeshAttributes, &
              Diagnostics
@@ -100,10 +98,6 @@ contains
          print 45, 'Filetype:'//l, ftype
          print 45, 'Control volume:'//l, cvtype
 
-         if (grid%adjust_aperture .EQV. PETSC_TRUE) then
-            print 45, 'Aperture control file:'//l, trim(grid%aperture_file)
-         endif
-
          if (grid%outtype == 1) then
             print *, char(10), 'FEHM SETTINGS'
             print *, repeat(h1, w1)
@@ -158,10 +152,9 @@ contains
 
    end subroutine PrintMeshAttributes
 
-   subroutine Log(message, rank, io_rank)
-      ! 
-      ! Logs message to STDOUT.
-      ! 
+   subroutine mpi_print(message, rank, io_rank)
+#include "petsc/finclude/petscvec.h"
+      use petscvec
 
       implicit none
 
@@ -174,52 +167,9 @@ contains
       zero = 0
 
       if (verbosity == 0) return
-      if (rank == io_rank) then
-         print *, message
-      endif
+      if (rank == io_rank) print *, message
 
-   end subroutine Log
-
-   subroutine ThrowError(message, grid, rank, io_rank)
-      !
-      ! Throws an error to STDOUT and aborts process.
-      !
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscmat.h"
-
-      use petscvec
-      use petscmat
-      implicit none
-
-      type(grid_type) :: grid
-      PetscInt :: rank, io_rank, ierr
-      character(len=*) :: message
-
-      if (rank == io_rank) then
-         print '(2a)', 'FATAL ERROR: ', message
-      endif
-
-      !call GridDestroy(grid)
-      !call PetscFinalize(ierr); CHKERRQ(ierr)
-
-      call EXIT(1)
-
-   end subroutine ThrowError
-
-   subroutine ThrowWarning(message, rank, io_rank)
-      ! 
-      ! Throws a warning to STDOUT.
-      ! 
-      implicit none
-
-      PetscInt :: rank, io_rank
-      character(len=*) :: message
-
-      if (rank == io_rank) then
-         print '(2a)', 'WARNING: ', message
-      endif
-
-   end subroutine ThrowWarning
+   end subroutine mpi_print
 
    integer function ParseDimension(infile, length)
       !
@@ -460,7 +410,7 @@ contains
       implicit none
 
       integer :: imt_index
-      PetscReal, allocatable :: tmp_att(:)
+      PetscReal :: tmp_att(5)
       PetscReal, dimension(:), allocatable :: imt_vector
 
       type(grid_type) :: grid
@@ -825,36 +775,6 @@ contains
          ! if we're reading an AVS file...
          if (grid%lg_flag .eqv. PETSC_TRUE) then
             call getMatFromIMT(imt1, num_pts, grid%imt_values)
-         else if (grid%adjust_aperture .EQV. PETSC_TRUE) then
-
-            if (num_atts .eq. 0) then
-               call ThrowError('Cannot parse apertures: mesh has no node attributes', grid, rank, io_rank)
-            endif
-
-            allocate (imt_vector(num_pts))
-            imt_index = -1
-
-            ! figure out which column is the aperture variable
-            do iatt = 1, num_atts + 1
-               read (fileid, *) tmp_str
-               if (adjustl(trim(tmp_str)) == adjustl(trim(grid%aperture_attribute))) then
-                  imt_index = iatt
-               endif
-            enddo
-
-            if (imt_index .lt. 0) then
-               call ThrowError('Cannot parse apertures: attribute '// adjustl(trim(grid%aperture_attribute)) // ' not found', grid, rank, io_rank)
-            endif
-
-            allocate (tmp_att(num_atts+1))
-
-            do iatt = 1, num_pts
-               read (fileid, *) tmp_att
-               imt_vector(iatt) = tmp_att(imt_index)
-            enddo
-
-            deallocate(tmp_att)
-
          else
             ! if there is no zone flag, AND we're in TOUGH2 mode...
             if ((grid%zone_flag .EQV. PETSC_FALSE) .AND. (grid%is_tough .EQV. PETSC_TRUE)) then
@@ -874,16 +794,11 @@ contains
 
                   ! verify that there actually *is* an imt field
                   if (imt_index .gt. 0) then
-
-                     allocate(tmp_att(5))
-
                      ! iterate over rows & assign the correct column to imt_vector
                      do iatt = 1, num_pts
                         read (fileid, *) tmp_att(1), tmp_att(2), tmp_att(3), tmp_att(4), tmp_att(5)
                         imt_vector(iatt) = tmp_att(imt_index)
                      enddo
-
-                     deallocate(tmp_att)
 
                      ! convert to a materials string
                      call getMatFromIMT(imt_vector, num_pts, grid%imt_values)
@@ -899,16 +814,6 @@ contains
             endif
             close (fileid)
          endif
-      endif
-
-      ! TODO: this attrb. parsing seriously needs to be in its own subroutine...
-      if (grid%adjust_aperture .EQV. PETSC_TRUE) then
-
-         ! TODO: this is global but needs to be local
-         allocate (grid%attribute(grid%num_pts_global))
-
-         if (rank == io_rank) grid%attribute = imt_vector
-         call MPI_Bcast(grid%attribute, grid%num_pts_global, MPI_DOUBLE, io_rank, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
       endif
 
       if (allocated(imt1)) deallocate (imt1)
@@ -1171,7 +1076,6 @@ contains
       type(diag_atts) :: atts
       PetscInt  :: i, temp(3), rank
       PetscReal :: cell_area(3), cell_vol(3), cell_len(3)
-      PetscReal, allocatable :: vol_local(:)
       PetscErrorCode :: ierr
 
       temp = 0
@@ -2081,235 +1985,6 @@ contains
    end subroutine CreateEdgeMatrix
 
 !**************************************************************************
-
-   subroutine GridGetVolumes(grid, vol_local)
-      ! 
-      ! NOTE: this should be a 'type method'
-      ! 
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscmat.h"
-
-      use petscvec
-      use petscmat
-      implicit none
-
-      type(grid_type) :: grid
-      PetscReal, allocatable :: vol_local(:)
-      PetscReal, pointer :: vec_ptr(:)
-      Vec :: mat_diag
-      PetscErrorCode :: ierr
-
-      allocate (vol_local(grid%num_pts_local))
-      call VecCreate(PETSC_COMM_WORLD, mat_diag, ierr); CHKERRQ(ierr)
-      call VecSetSizes(mat_diag, grid%num_pts_local, grid%num_pts_global, ierr); CHKERRQ(ierr)
-      call VecSetType(mat_diag, VECMPI, ierr); CHKERRQ(ierr)
-      call MatGetDiagonal(grid%adjmatrix, mat_diag, ierr); CHKERRQ(ierr)
-      call VecGetArrayReadF90(mat_diag, vec_ptr, ierr); CHKERRQ(ierr)
-
-      vol_local = vec_ptr
-
-      call VecRestoreArrayReadF90(mat_diag, vec_ptr, ierr); CHKERRQ(ierr)
-      call VecDestroy(mat_diag, ierr); CHKERRQ(ierr)
-
-   end subroutine GridGetVolumes
-
-!**************************************************************************
-
-   subroutine ReadGridApertures(grid, atts, rank, size)
-      ! 
-      ! From the control file `grid%aperture_file`,
-      ! parse the file for aperture values.
-      !
-      ! The aperture values are coefficients applied to
-      ! Voronoi cells and connections to artificially
-      ! manipulate cell parameters like volume and interface
-      ! area.
-      !
-
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscmat.h"
-
-      use petscvec
-      use petscmat
-      implicit none
-
-      type(grid_type) :: grid
-      type(diag_atts) :: atts
-      character*132 :: att_name
-      character*100 :: tmp_string
-      PetscInt :: i, rank, size, tmp_int, file_unit, ioerr, n_apertures
-      PetscInt :: io_rank = 0
-      PetscReal :: tmp_real
-      PetscReal, allocatable :: apertures(:)
-      PetscReal, allocatable :: vol_local(:)
-      PetscBool :: file_exists
-      PetscErrorCode :: ierr
-
-      att_name = ' '
-      file_unit = 15
-
-      if (rank == io_rank) then
-         inquire(file=grid%aperture_file, exist=file_exists)
-
-         if (file_exists .eqv. .false.) then
-             call ThrowError('File "'//trim(grid%aperture_file)//'" does not exist!', grid, rank, io_rank)
-         endif
-
-         ! Read over open file until EOF
-         ! Fill in zdepths using the first column as
-         ! an index
-         open(unit=file_unit, file=grid%aperture_file)
-         do
-            read(file_unit,'(A)',IOSTAT=ioerr) tmp_string
-            if (ioerr > 0) then
-                ! Malformed file format / broken stream / etc.
-                close(file_unit)
-                call ThrowError('Something went wrong during file read', grid, rank, io_rank)
-            else if (ioerr < 0) then
-                ! EOF
-                exit
-            endif
-
-            ! Ignore comments and empty lines
-            if (tmp_string(1:1) == '#')      cycle
-            if (trim(tmp_string(1:1)) == '') cycle
-
-            ! Read in the attribute name from control file of form:
-            ! attribute: imt1
-            if (tmp_string(1:10) == 'attribute:') then
-              att_name = adjustl(trim(tmp_string(11:)))
-              cycle
-            endif
-
-            ! Read in the attribute name from control file of form:
-            ! apertures: 4
-            if (tmp_string(1:10) == 'apertures:') then
-              tmp_string = trim(tmp_string(11:))
-              read(tmp_string,*) tmp_int
-
-              n_apertures = tmp_int
-              allocate(apertures(n_apertures))
-
-              cycle
-            endif
-
-            ! We shouldn't reach this point until `apertures: `
-            ! has been read. Error if not.
-            if (.not. allocated(apertures)) then
-                close(file_unit)
-                call ThrowError('`apertures: ` was not defined in control file', grid, rank, 0)
-            endif
-
-            ! Read in attribute_id, aperture_val
-            read(tmp_string,*) tmp_int, tmp_real
-            apertures(tmp_int) = tmp_real
-         enddo
-         close(file_unit)
-
-         if (len_trim(att_name) == 0) then
-            att_name = 'imt1' ! TODO: imt1???
-            !deallocate(apertures)
-            !call ThrowError('`attribute: ` was not defined in control file', grid, rank, 0)
-         endif
-
-         grid%aperture_attribute = att_name
-
-      endif
-
-      print*,'>>>>',grid%aperture_attribute
-
-      ! Broadcast the parsable mesh attribute to all ranks
-      ! This is probably unnecessary: only rank 0 will need access
-      call MPI_Bcast(grid%aperture_attribute, len(att_name), MPI_CHAR, io_rank, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
-
-      ! Broadcast `n_apertures` so that grid%apertures can be correctly
-      ! allocated across all ranks
-      call MPI_Bcast(n_apertures, ONE_INTEGER_MPI, MPI_INTEGER, io_rank, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
-
-      ! Set apertures to be visible across all ranks
-      allocate(grid%apertures(n_apertures))
-      grid%apertures = apertures
-
-      call MPI_Bcast(grid%apertures, n_apertures, MPI_DOUBLE, io_rank, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
-
-   end subroutine ReadGridApertures
-
-!**************************************************************************
-
-   subroutine SetGridApertures(grid, atts, rank)
-
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscmat.h"
-
-      use petscvec
-      use petscmat
-      implicit none
-
-      type(grid_type) :: grid
-      type(diag_atts) :: atts
-      PetscInt :: i, j, rank, io_rank=0
-      PetscInt :: ncols, temp_int, pos1, rec_local
-      PetscScalar :: v1(1), v2(1)
-      PetscReal :: coeff_i, coeff_j
-      PetscReal, pointer :: vec_ptr(:)
-      PetscReal, allocatable :: edge_local(:)
-      PetscScalar, allocatable :: edge_temp(:)
-      PetscErrorCode :: ierr
-
-      if (grid%num_pts_local /= grid%num_pts_global) then
-         call ThrowWarning('SetGridApertures is in development: ONLY works for -np = 1', rank, io_rank)
-         call EXIT(1)
-      endif
-
-      call VecGetArrayReadF90(grid%degree_tot, vec_ptr, ierr); CHKERRQ(ierr)
-      rec_local = int(sum(vec_ptr))
-      allocate (edge_local(rec_local))
-      pos1 = 0
-      temp_int = int(maxval(vec_ptr))
-      allocate (edge_temp(temp_int))
-
-      ! TODO: local != global!!!!!
-      do i = 1, grid%num_pts_local
-         call MatGetValues(grid%adjmatrix, 1, (/i-1/), 1, (/i-1/), v1, ierr); CHKERRQ(ierr)
-         coeff_i = grid%apertures(grid%attribute(i))
-         v2(1) = coeff_i * v1(1)
-
-         ! TODO: needs to be vectorized
-         ! For efficiency one should use MatSetValues() and set several or many values simultaneously if possible.
-         ! https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatSetValue.html
-         call MatAssemblyBegin(grid%adjmatrix, MAT_FINAL_ASSEMBLY, ierr); CHKERRQ(ierr)
-         call MatAssemblyEnd(grid%adjmatrix, MAT_FINAL_ASSEMBLY, ierr); CHKERRQ(ierr)
-
-         call MatSetValue(grid%adjmatrix, i - 1, i - 1, v2(1), INSERT_VALUES, ierr); CHKERRQ(ierr)
-
-         call MatAssemblyBegin(grid%adjmatrix, MAT_FINAL_ASSEMBLY, ierr); CHKERRQ(ierr)
-         call MatAssemblyEnd(grid%adjmatrix, MAT_FINAL_ASSEMBLY, ierr); CHKERRQ(ierr)
-
-         ! ------------------------------------- !
-
-         do j = 1, grid%num_pts_local
-            call MatGetValues(grid%adjmatrix_full, 1, (/i-1/), 1, (/j-1/), v1, ierr); CHKERRQ(ierr)
-
-            call MatAssemblyBegin(grid%adjmatrix_full, MAT_FINAL_ASSEMBLY, ierr); CHKERRQ(ierr)
-            call MatAssemblyEnd(grid%adjmatrix_full, MAT_FINAL_ASSEMBLY, ierr); CHKERRQ(ierr)
-
-            if (v1(1) .eq. 0) cycle
-
-            coeff_j = grid%apertures(grid%attribute(j))
-            v2(1) = 0.5 * (coeff_i + coeff_j) * v1(1)
-
-            call MatSetValue(grid%adjmatrix_full, i - 1, j - 1, v2(1), INSERT_VALUES, ierr); CHKERRQ(ierr)
-
-            call MatAssemblyBegin(grid%adjmatrix_full, MAT_FINAL_ASSEMBLY, ierr); CHKERRQ(ierr)
-            call MatAssemblyEnd(grid%adjmatrix_full, MAT_FINAL_ASSEMBLY, ierr); CHKERRQ(ierr)
-         enddo
-
-      enddo
-
-   end subroutine SetGridApertures
-
-!**************************************************************************
-
    subroutine GridWriteFEHM(grid, atts, rank, size)
       !
       ! Dumps all the information into FEHM .stor file
@@ -4026,7 +3701,7 @@ contains
       IS :: irow1, icol1, irow2, icol2, irow3, icol3
       PetscScalar :: temp_int
 
-      call Log('   Building connectivity matrices', rank, io_rank)
+      call mpi_print('   Building connectivity matrices', rank, io_rank)
 
       call MatDuplicate(grid%edgematrix, MAT_SHARE_NONZERO_PATTERN, grid%conn1, ierr); CHKERRQ(ierr)
       call MatDuplicate(grid%edgematrix, MAT_SHARE_NONZERO_PATTERN, grid%conn2, ierr); CHKERRQ(ierr)
@@ -4588,6 +4263,256 @@ contains
 
       call MPI_Gatherv(vol_local, grid%num_pts_local, &
                        MPI_DOUBLE_PRECISION, vor_vol, recvcounts, &
+                       pos, MPI_DOUBLE_PRECISION, io_rank, &
+                       MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+
+      if (rank == io_rank) then
+         deallocate (recvcounts)
+         deallocate (pos)
+      endif
+
+      call MPI_Reduce(atts%vol, vol, 1, MPI_DOUBLE, MPI_SUM, io_rank, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+
+      ! ==================================
+      ! AREA / LENGTH STATISTICS
+      ! ==================================
+      max_connections_local = -1
+      min_connections_local = 1e4
+      pos1 = 0
+      do i = 1, grid%num_pts_local
+         temp_int = int(vec_ptr(i))
+
+         ! Capture coefficients
+         call MatGetRow(grid%adjmatrix_full, grid%vertex_ids(i) - 1, ncols, PETSC_NULL_INTEGER, adj_temp, ierr); CHKERRQ(ierr)
+         adj_local(pos1 + 1:pos1 + temp_int) = adj_temp(1:temp_int)
+         max_connections_local = max(max_connections_local, count(abs(adj_temp(1:temp_int)) .gt. 1e-12))
+         min_connections_local = min(min_connections_local, count(abs(adj_temp(1:temp_int)) .gt. 1e-12))
+
+         negative_coeffs_local = negative_coeffs_local + count(adj_temp(1:temp_int) .lt. 0.0)
+
+         call MatRestoreRow(grid%adjmatrix_full, grid%vertex_ids(i) - 1, ncols, PETSC_NULL_INTEGER, adj_temp, ierr); CHKERRQ(ierr)
+         pos1 = pos1 + temp_int
+      enddo
+
+      call MPI_Reduce(minval(adj_local), area_len_min, 1, MPI_DOUBLE, MPI_MIN, io_rank, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+      call MPI_Reduce(maxval(adj_local), area_len_max, 1, MPI_DOUBLE, MPI_MAX, io_rank, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+      call MPI_Reduce(max_connections_local, max_connections, 1, MPI_INT, MPI_MAX, io_rank, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+      call MPI_Reduce(min_connections_local, min_connections, 1, MPI_INT, MPI_MIN, io_rank, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+      call MPI_Reduce(negative_coeffs_local, negative_coeffs, 1, MPI_INT, MPI_SUM, io_rank, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+
+      ! ==================================
+      ! AREA STATISTICS
+      ! ==================================
+      pos1 = 0
+      adj_local = 0.
+      do i = 1, grid%num_pts_local
+         temp_int = int(vec_ptr(i))
+
+         ! Capture coefficients
+         call MatGetRow(grid%adjmatrix_area, grid%vertex_ids(i) - 1, ncols, PETSC_NULL_INTEGER, adj_temp, ierr); CHKERRQ(ierr)
+         adj_local(pos1 + 1:pos1 + temp_int) = adj_temp(1:temp_int)
+         call MatRestoreRow(grid%adjmatrix_area, grid%vertex_ids(i) - 1, ncols, PETSC_NULL_INTEGER, adj_temp, ierr); CHKERRQ(ierr)
+         pos1 = pos1 + temp_int
+         area_local = area_local + sum(adj_temp(1:temp_int))
+
+      enddo
+
+      call MPI_Reduce(area_local, atts%vor_area, 1, MPI_DOUBLE, MPI_SUM, io_rank, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+      call MPI_Reduce(atts%face_area, face_area, 1, MPI_DOUBLE, MPI_SUM, io_rank, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+      call MPI_Reduce(minval(adj_local), area_min, 1, MPI_DOUBLE, MPI_MIN, io_rank, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+      call MPI_Reduce(maxval(adj_local), area_max, 1, MPI_DOUBLE, MPI_MAX, io_rank, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+
+      ! ==================================
+      ! LENGTH STATISTICS
+      ! ==================================
+      pos1 = 0
+      adj_local = 0.
+      do i = 1, grid%num_pts_local
+         temp_int = int(vec_ptr(i))
+
+         ! Capture coefficients
+         call MatGetRow(grid%adjmatrix_len, grid%vertex_ids(i) - 1, ncols, PETSC_NULL_INTEGER, adj_temp, ierr); CHKERRQ(ierr)
+         adj_local(pos1 + 1:pos1 + temp_int) = adj_temp(1:temp_int)
+         call MatRestoreRow(grid%adjmatrix_len, grid%vertex_ids(i) - 1, ncols, PETSC_NULL_INTEGER, adj_temp, ierr); CHKERRQ(ierr)
+         pos1 = pos1 + temp_int
+      enddo
+
+      call MPI_Reduce(minval(adj_local), len_min, 1, MPI_DOUBLE, MPI_MIN, io_rank, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+      call MPI_Reduce(maxval(adj_local), len_max, 1, MPI_DOUBLE, MPI_MAX, io_rank, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+
+      !call EXIT(0)
+
+      ! Iterate over every sparse matrix row
+      ! do i=1,grid%num_pts_local
+      !
+      !   ! ==================================
+      !   ! AREA / LENGTH STATISTICS
+      !   ! ==================================
+
+      !   call MatGetRow(grid%adjmatrix_full,i-1,ncols,PETSC_NULL_INTEGER,adj_temp,ierr);CHKERRQ(ierr)
+      !   adj_local(1:grid%num_pts_global) = adj_temp(1:grid%num_pts_global)
+      !   call MatRestoreRow(grid%adjmatrix_full,i-1,ncols,PETSC_NULL_INTEGER,adj_temp,ierr);CHKERRQ(ierr)
+
+      !   do ii=2,grid%num_pts_global
+      !     temp_real = adj_local(ii)
+
+      !     area_len_min = min(area_len_min,temp_real)
+      !     area_len_max = max(area_len_max,temp_real)
+
+      !     if ((temp_real < -1e-8) .AND. (k <= 10)) then
+      !       neg_coeff_val(k) = -temp_real     ! Value
+      !       neg_coeff_idx(k,1) = i            ! Column
+      !       neg_coeff_idx(k,2) = ii           ! Row
+      !       k = k + 1
+      !     endif
+      !   enddo
+
+      !   ! ==================================
+      !   ! AREA STATISTICS
+      !   ! ==================================
+
+      !   call MatGetRow(grid%adjmatrix_full,i-1,ncols,PETSC_NULL_INTEGER,adj_temp,ierr);CHKERRQ(ierr)
+      !   adj_local(1:grid%num_pts_global) = adj_temp(1:grid%num_pts_global)
+      !   call MatRestoreRow(grid%adjmatrix_full,i-1,ncols,PETSC_NULL_INTEGER,adj_temp,ierr);CHKERRQ(ierr)
+
+      !   area_min = min(area_min,minval(adj_local(i+1:)))
+      !   area_max = max(area_max,maxval(adj_local(i+1:)))
+
+      !   atts%vor_area = atts%vor_area + sum(adj_local(i+1:))
+
+      !   ! ==================================
+      !   ! LENGTH STATISTICS
+      !   ! ==================================
+
+      !   call MatGetRow(grid%adjmatrix_full,i-1,ncols,PETSC_NULL_INTEGER,adj_temp,ierr);CHKERRQ(ierr)
+      !   adj_local(1:grid%num_pts_global) = adj_temp(1:grid%num_pts_global)
+      !   call MatRestoreRow(grid%adjmatrix_full,i-1,ncols,PETSC_NULL_INTEGER,adj_temp,ierr);CHKERRQ(ierr)
+
+      !   len_min = min(len_min,minval(adj_local(i+1:)))
+      !   len_max = max(len_max,maxval(adj_local(i+1:)))
+
+      !   ! ==================================
+      !   ! OTHER STATISTICS
+      !   ! ==================================
+
+      !   max_node_connections = max(max_node_connections,count(abs(adj_local(i+1:)) .gt. 1e-9))
+
+      !   ! Capture negative Voronoi volumes
+      !   if ((vor_vol(i) < -1e-8) .AND. (j <= 10)) then
+      !     neg_vols_val(j) = vor_vol(i)
+      !     neg_vols_idx(j) = i
+      !     j = j + 1
+      !   endif
+
+      ! enddo
+
+      if (rank == io_rank) then
+         if (grid%ndim == 3) then
+            element_type = 'tetrahedral'
+         else
+            element_type = 'triangle'
+         endif
+
+         ! Necessary to 'left-flush' lines
+         l = repeat(' ', 50)
+
+         h1 = '='    ! Header 1 linebreak
+         h2 = '-'    ! Header 2 linebreak
+
+         w1 = 65     ! Width of header 1
+         w2 = w1 - 3 ! Width of header 2
+
+         tmp = -0.0000456278
+         mint = 12
+
+         ! Text: float
+44       format(4X, A46, 1x, E15.7)
+         ! Text: integer
+46       format(4X, A51, 1x, i10)
+         ! Text
+47       format(4X, A)
+
+         ! Print out header
+         if (hide_banner .eqv. PETSC_FALSE) then
+            print *, char(10), ' ', repeat('-', (w1 - 15)/2), '[ DIAGNOSTICS ]', repeat('-', (w1 - 15)/2)
+         endif
+
+         ! Begin outputting diagnostics
+         print *, char(10), ' CONNECTIONS'
+         print *, repeat(h1, w1)
+         print 46, 'Minimum Cell Connections:'//l, min_connections
+         print 46, 'Maximum Cell Connections:'//l, max_connections
+
+         print *, char(10), ' VOLUME'
+         print *, repeat(h1, w1)
+         print 44, 'Min. Voronoi volume:'//l, minval(vor_vol)
+         print 44, 'Max. Voronoi volume:'//l, maxval(vor_vol)
+         print 47, repeat(h2, w2)
+         print 44, 'Total Voronoi volume:'//l, sum(vor_vol)
+         print 44, 'Total '//trim(element_type)//' volume:'//l, vol!atts%vol
+
+         print *, char(10), ' COEFFICIENTS'
+         print *, repeat(h1, w1)
+         print 44, 'Min. Voronoi area:'//l, area_min
+         print 44, 'Max. Voronoi area:'//l, area_max
+         print 47, repeat(h2, w2)
+         print 44, 'Min. Voronoi edge length:'//l, len_min
+         print 44, 'Max. Voronoi edge length:'//l, len_max
+         print 47, repeat(h2, w2)
+         print 44, 'Min. area/len coefficient:'//l, area_len_min
+         print 44, 'Max. area/len coefficient:'//l, area_len_max
+         print 47, repeat(h2, w2)
+         print 44, 'Total Voronoi area:'//l, atts%vor_area
+         print 44, 'Total triangle face area:'//l, face_area
+
+         print *, char(10), ' WARNINGS'
+         print *, repeat(h1, w1)
+         print 46, 'Negative Voronoi volumes:'//l, count(vor_vol .lt. 0.0)!j-1
+
+         ! Write out where negative volumes are
+         !if (j > 1) then
+         !  print*,''
+         !  ! k = ceil(log10(y+1))
+         !  do i=1,atts%neg_vol
+!
+         !    if (i > 10) then
+         !      print*,repeat(' ',(w1-1)/2),'...'
+         !      exit
+         !    endif
+!
+         !    write(tmp_str,'(i10)') neg_vols_idx(i)
+         !    print 44,'    - Node '//trim(tmp_str)//':'//l,neg_vols_val(i)
+         !  enddo
+         !  print*,''
+         !endif
+
+         print 47, repeat(h2, w2)
+         print 46, 'Negative area/len coefficients:'//l, negative_coeffs!k-1
+
+         ! Write out where negative coefficients are
+         !if (k > 1) then
+         !  print*,''
+         !  do i=1,atts%neg_coeff
+!
+         !    if (i > 10) then
+         !      print*,repeat(' ',(w1-1)/2),'...'
+         !      exit
+         !    endif
+         !
+         !    write(tmp_str,'(i8)') neg_coeff_idx(i,1)
+         !    write(tmp_str2,'(i8)') neg_coeff_idx(i,2)
+         !    print 44,'    - Row '//trim(tmp_str)//', column '//tmp_str2//':'//l,neg_coeff_val(i)
+         !  enddo
+         !  print*,''
+         !endif
+
+         print 47, repeat(h2, w2)
+      endif
+
+   end subroutine Diagnostics
+
+end module Grid_module
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            s, &
                        pos, MPI_DOUBLE_PRECISION, io_rank, &
                        MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
 

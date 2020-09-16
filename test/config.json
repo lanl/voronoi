@@ -1,3 +1,4 @@
 {
-    "voronoi_exe": "../../src/voronoi"
+    "voronoi_exe": "../src/voronoi",
+    "mpiexec_exe": "/vagrant/petsc-xsdk-0.2.0/arch-linux2-c-debug/bin/mpiexec"
 }
