@@ -3,12 +3,20 @@ project(VORONOI)
 enable_language(Fortran)
 set(VERSION 1.0.0)
 
+#set(CMAKE_CXX_COMPILER ${PETSC_DIR}/${PETSC_ARCH}/bin/mpicxx)
+#set(CMAKE_C_COMPILER ${PETSC_DIR}/${PETSC_ARCH}/bin/mpicc)
+set(CMAKE_Fortran_COMPILER ${PETSC_DIR}/${PETSC_ARCH}/bin/mpif90)
+set(CMAKE_Fortran_FLAGS "-fcray-pointer")
+
 find_package(PkgConfig)
 pkg_search_module(PETSC PETSc>3.5.0 IMPORTED_TARGET REQUIRED)
 
 message(STATUS "Found PETSc ${PETSC_VERSION}")
+message(STATUS "Fortran compiler: ${CMAKE_Fortran_COMPILER}")
 
 add_definitions(${PETSC_DEFINITIONS})
+
+# -D CMAKE_C_COMPILER=${PETSC_DIR}/${PETSC_ARCH}/bin/mpicc
 
 set(EXE voronoi)
 set(SRC ${CMAKE_SOURCE_DIR}/src)
@@ -16,7 +24,6 @@ set(BIN ${CMAKE_SOURCE_DIR}/bin)
 set(LIB ${CMAKE_SOURCE_DIR}/lib)
 
 set(CMAKE_Fortran_MODULE_DIRECTORY ${LIB})
-#add_subdirectory(${SRC} ${BIN})
 
 add_executable(
     ${EXE}
