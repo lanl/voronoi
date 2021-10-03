@@ -1,17 +1,20 @@
 cmake_minimum_required(VERSION 3.1)
-project(VORONOI)
-enable_language(Fortran)
+project(VORONOI LANGUAGES Fortran)
 set(VERSION 1.0.0)
 
 #set(CMAKE_CXX_COMPILER ${PETSC_DIR}/${PETSC_ARCH}/bin/mpicxx)
 #set(CMAKE_C_COMPILER ${PETSC_DIR}/${PETSC_ARCH}/bin/mpicc)
 set(CMAKE_Fortran_COMPILER ${PETSC_DIR}/${PETSC_ARCH}/bin/mpif90)
+
+# Set compiler flags 
 set(CMAKE_Fortran_FLAGS "-fcray-pointer")
 
 find_package(PkgConfig)
 pkg_search_module(PETSC PETSc>3.5.0 IMPORTED_TARGET REQUIRED)
-
 message(STATUS "Found PETSc ${PETSC_VERSION}")
+
+find_package(HDF5 REQUIRED COMPONENTS Fortran HL)
+
 message(STATUS "Fortran compiler: ${CMAKE_Fortran_COMPILER}")
 
 add_definitions(${PETSC_DEFINITIONS})
@@ -34,9 +37,35 @@ add_executable(
     ${SRC}/convert_accuracy.f95
 )
 
-target_link_libraries(${EXE} ${PETSC_LIBRARIES})
-target_include_directories(${EXE} PUBLIC ${PETSC_INCLUDE_DIRS})
-target_compile_options(${EXE} PUBLIC ${PETSC_CFLAGS_OTHER})
+set_target_properties(
+    ${EXE}
+    PROPERTIES
+    LINKER_LANGUAGE Fortran
+)
+
+set_target_properties(${EXE} PROPERTIES LINK_FLAGS "${MPI_LINK_FLAGS}" )
+set_target_properties(${EXE} PROPERTIES Fortran_FORMAT "FREE" )
+
+target_link_libraries(
+    ${EXE}
+    ${PETSC_LIBRARIES}
+    ${HDF5_Fortran_LIBRARIES}
+)
+
+target_include_directories(
+    ${EXE}
+    PUBLIC
+    ${PETSC_INCLUDE_DIRS}
+    ${HDF5_INCLUDE_DIRS}
+)
+
+target_compile_options(
+    ${EXE}
+    PUBLIC
+    ${PETSC_CFLAGS_OTHER}
+)
+
+set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
 
 #INSTALL(${EXE} ${FOOEXE} RUNTIME DESTINATION bin)
 
