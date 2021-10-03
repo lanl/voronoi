@@ -1,3 +1,13 @@
+```sh
+$ PKG_CONFIG_PATH=$PETSC_DIR/$PETSC_ARCH/lib/pkgconfig/ cmake ..
+(maybe this would work? cmake -DPKG_CONFIG_PATH=/sfd/ .. )
+```
+
+
+=================================
+
+
+
 ![](docs/themes/kube/static/img/kube/voronoi_logo-black.png)
 
 [![pipeline status](https://travis-ci.org/lanl/voronoi.svg?branch=master)](https://travis-ci.org/lanl/voronoi)
