@@ -1,4 +1,5 @@
 # Build related files
+build/
 *.o
 *.mod
 *.out
