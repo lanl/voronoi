@@ -34,7 +34,7 @@ program main
   read (15,*) data
   rec_tot = int(data(1))
   npts  = int(data(2))
-  open(unit=37,file='test.stor')            
+  open(unit=37,file='test.stor')
   print*, rec_tot,npts  
 
   allocate(area(npts))
@@ -101,11 +101,11 @@ program main
   
   write(37,'(a)') info1
   write(37,'(a)') fdate()
-  write(37,18) data       
-  write(37,17),(dabs(area(i)),i=1,npts)
-  write(37,18),(keep_int_info1(i),i=1,npts+1+rec_tot)
-  write(37,18),(keep_int_info2(i),i=1,npts+1+rec_tot)
-  write(37,18),(keep_int_info3(i),i=1,npts)
+  write(37,18) data
+  write(37,17) (dabs(area(i)),i=1,npts)
+  write(37,18) (keep_int_info1(i),i=1,npts+1+rec_tot)
+  write(37,18) (keep_int_info2(i),i=1,npts+1+rec_tot)
+  write(37,18) (keep_int_info3(i),i=1,npts)
   write(37,17) (dabs(coef(i)),i=1,rec_tot)
   close(37)
 end program main
