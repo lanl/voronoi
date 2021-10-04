@@ -445,7 +445,7 @@ contains
 
          ! Check if LaGriT infile was passed
          if (grid%lg_flag .eqv. PETSC_TRUE) then
-
+#ifdef WITH_LAGRIT
             if (grid%avs_flag .eqv. PETSC_TRUE) then
                print *, '\nWARNING: Both AVS and LaGriT infiles passed to Voronoi.'
                print *, '         Defaulting to LaGriT.\n'
@@ -490,6 +490,7 @@ contains
 
 #if DEBUG
             call dotask('mmprint; finish', ierror) ! LG memory info
+#endif
 #endif
          else
             length = len(trim(grid%avs_str))

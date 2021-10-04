@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.12)
 project(VORONOI LANGUAGES Fortran)
 set(VERSION 1.0.0)
 
@@ -20,7 +20,22 @@ pkg_search_module(PETSC PETSc>3.1.0 IMPORTED_TARGET REQUIRED)
 message(STATUS "Found PETSc ${PETSC_VERSION}")
 
 find_package(HDF5 REQUIRED COMPONENTS Fortran HL)
-message(STATUS "Fortran compiler: ${CMAKE_Fortran_COMPILER}")
+message(STATUS "Found HDF5 ${HDF5_VERSION}")
+
+# Attempt to find LaGriT
+find_library(LAGRIT
+    NAMES liblagrit lagrit
+    HINTS "/usr/local/lib" # TODO: hints needs to be changed
+)
+
+if(${LAGRIT} STREQUAL "LAGRIT-NOTFOUND")
+    message(WARNING "LaGriT could *NOT* be found: compiling without it")
+    set(LAGRIT_LIBRARIES "")
+else()
+    message(STATUS "Importing LaGriT from: ${LAGRIT}")
+    add_compile_definitions(WITH_LAGRIT)
+    set(LAGRIT_LIBRARIES "${LAGRIT}")
+endif()
 
 add_definitions(${PETSC_DEFINITIONS})
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
@@ -47,6 +62,7 @@ target_link_libraries(
     ${EXE}
     ${PETSC_LIBRARIES}
     ${HDF5_Fortran_LIBRARIES}
+    ${LAGRIT_LIBRARIES}
 )
 
 target_include_directories(
