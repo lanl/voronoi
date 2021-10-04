@@ -176,9 +176,6 @@ contains
       ! Scans an AVS file for element types,
       ! and returns dimensionality as an integer
       !
-      ! Author: Daniel Livingston
-      ! Date: 10/18/2017
-      !
 
       implicit none
 
@@ -228,9 +225,6 @@ contains
    subroutine ReadSTORFile(grid, rank, size, infile)
       !
       ! Reads a STOR file into a grid object
-      !
-      ! Author: Daniel Livingston, LANL
-      ! Date: 08/27/2018
       !
 
 #include "petsc/finclude/petscvec.h"
@@ -399,9 +393,6 @@ contains
    subroutine GridRead(grid, rank, size)
       !
       ! Reads a grid in avs format
-      !
-      ! Author: Satish Karra and Zhuolin Qu, LANL
-      ! Date: 07/23/2015
       !
 
 #include "petsc/finclude/petscvec.h"
@@ -828,9 +819,6 @@ contains
       ! to local needed coordinates
       ! & counting the connections meanwhile
       !
-      ! Author: Zhuolin Qu, LANL
-      ! Date: 07/21/2015
-      !
 
 #include "petsc/finclude/petscvec.h"
       use petscvec
@@ -977,9 +965,6 @@ contains
       !
       ! Allocates the adjacent matrix
       !
-      ! Author: Zhuolin Qu, LANL
-      ! Date: 07/22/2015
-      !
 
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscmat.h"
@@ -1059,9 +1044,6 @@ contains
    subroutine CalculateGeometricCoeff(grid, rank, atts)
       !
       ! Calculates the geometric coefficients from grid and put the values in the adjacent matrix
-      !
-      ! Author: Zhuolin Qu, LANL
-      ! Date: 07/22/2015
       !
 
 #include "petsc/finclude/petscvec.h"
@@ -1155,9 +1137,6 @@ contains
    subroutine CalculateGeometricCoeff3D(grid, rank, atts)
       !
       ! Calculates the geometric coefficients from grid and put the values in the adjacent matrix
-      !
-      ! Author: Daniel Livingston, LANL
-      ! Date: 07/17/2017
       !
 
 #include "petsc/finclude/petscvec.h"
@@ -1279,9 +1258,6 @@ contains
    subroutine PhaseAreaVolumeLength3D(grid, rank, cell_area, cell_vol, cell_len, idx, ielem, atts)
       !
       ! Calculates the volumes and areas for readin elements and nodes
-      !
-      ! Author: Daniel Livingston, LANL
-      ! Date: 12/7/2017
       !
 
 #include "petsc/finclude/petscvec.h"
@@ -1459,9 +1435,6 @@ contains
       !
       ! Calculates the volumes and areas for each readin elements/triangle
       !
-      ! Author: Zhuolin Qu, LANL
-      ! Date: 07/22/2015
-      !
 
 #include "petsc/finclude/petscvec.h"
 
@@ -1544,9 +1517,6 @@ contains
       !
       ! Calculates the circumcenter for the Delauney element
       !
-      ! Author: Zhuolin Qu, LANL
-      ! Date: 07/08/2015
-      !
 
 #include "petsc/finclude/petscvec.h"
 
@@ -1587,9 +1557,6 @@ contains
       ! where Di and a are 4x4 matrices constructed from vectors v1,..,v4.
       ! The set of equations can be found at Wolfram MathWorld,
       ! under 'Circumsphere'.
-      !
-      ! Author: Daniel Livingston, LANL
-      ! Date: 09/05/2017
       !
 
 #include "petsc/finclude/petscvec.h"
@@ -1661,9 +1628,6 @@ contains
       ! For sequential rows in the matrix, v1,v2,v3,v4,
       ! return the determinate
       !
-      ! Author: Daniel Livingston, LANL
-      ! Date: 10/05/2017
-      !
 
       implicit none
 
@@ -1686,9 +1650,6 @@ contains
       ! For sequential rows in the matrix, v1,v2,v3,
       ! return the determinate
       !
-      ! Author: Daniel Livingston, LANL
-      ! Date: 10/05/2017
-      !
 
       implicit none
 
@@ -1708,9 +1669,6 @@ contains
       !
       ! Calculates the cross product of v1 and v2
       !
-      ! Author: Zhuolin Qu, LANL
-      ! Date: 07/08/2015
-      !
 
       implicit none
 
@@ -1727,9 +1685,6 @@ contains
       !
       ! Calculates the Voronoi Phase Area
       !
-      ! Author: Zhuolin Qu, LANL
-      ! Date: 07/08/2015
-      !
 
       implicit none
 
@@ -1744,9 +1699,6 @@ contains
    PetscReal function Area(v1, v2, v3, nn)
       !
       ! Calculates the Area
-      !
-      ! Author: Zhuolin Qu, LANL
-      ! Date: 07/08/2015
       !
 
       implicit none
@@ -1764,9 +1716,6 @@ contains
    PetscReal function Volume(v1, v2, v3, v4)
       !
       ! Calculates the volume of a tetrahedon
-      !
-      ! Author: Daniel Livingston, LANL
-      ! Date: 09/05/2017
       !
 
       implicit none
@@ -1788,9 +1737,6 @@ contains
       !
       ! Calculates the 2-norm of a vector
       !
-      ! Author: Zhuolin Qu, LANL
-      ! Date: 07/08/2015
-      !
 
       implicit none
 
@@ -1805,9 +1751,6 @@ contains
       ! Creates the exact degree vector and degree_tot vector
       ! and edge matrix from adjacentmatrix
       ! to prepare for the output
-      !
-      ! Author: Zhuolin Qu, LANL
-      ! Date: 07/22/2015
       !
 
 #include "petsc/finclude/petscvec.h"
@@ -1953,8 +1896,8 @@ contains
       call MatAssemblyBegin(grid%adjmatrix_full, MAT_FINAL_ASSEMBLY, ierr); CHKERRQ(ierr)
       call MatAssemblyEnd(grid%adjmatrix_full, MAT_FINAL_ASSEMBLY, ierr); CHKERRQ(ierr)
 
-      deallocate (vals)
-      deallocate (cols)
+      deallocate(vals)
+      deallocate(cols)
 
 #if DEBUG
       call PetscViewerASCIIOpen(PETSC_COMM_WORLD, 'connect_map.out', viewer, ierr); CHKERRQ(ierr)
@@ -2009,9 +1952,6 @@ contains
    subroutine GridWriteFEHM(grid, atts, rank, size)
       !
       ! Dumps all the information into FEHM .stor file
-      !
-      ! Author: Zhuolin Qu, LANL
-      ! Date: 07/26/2015
       !
 
       ! row_count -> 'Count for Each Row' (S4 in STOR file descriptor)
@@ -2690,9 +2630,6 @@ contains
       !
       ! Writes out mesh to TOUGH2 file format
       !
-      ! Authors: Daniel Livingston, Mikey Hannon, Manual Sentis, and Zhuolin Qu
-      ! Date: 04/11/20018
-      !
 
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscmat.h"
@@ -3283,10 +3220,6 @@ contains
       ! Returns a 5-char string indicating the material type of
       ! the fracture.
       !
-      ! Author: Zhuolin Qu, LANL
-      ! Revised: Daniel Livingston, LANL
-      ! Revision: 03/01/2018
-      !
       implicit none
 
       PetscInt :: countmat
@@ -3414,9 +3347,6 @@ contains
       ! Used for TOUGH2 ELEME materials when ZONE file isn't
       ! present.
       !
-      ! Author: Daniel Livingston, LANL
-      ! Date: 03/20/2018
-      !
 
       implicit none
 
@@ -3487,9 +3417,6 @@ contains
       ! See the TOUGH2 manual for more information, pp 172:
       !   http://esd1.lbl.gov/FILES/research/projects/tough/documentation/TOUGH2_V2_Users_Guide.pdf
       !
-      ! Author: Daniel Livingston, LANL
-      ! Date: 03/20/2018
-      !
 
       implicit none
 
@@ -3544,9 +3471,6 @@ contains
       ! Returns an ELEME line in the TOUGH2 filespec
       ! See the TOUGH2 manual for more information, pp 171:
       !   http://esd1.lbl.gov/FILES/research/projects/tough/documentation/TOUGH2_V2_Users_Guide.pdf
-      !
-      ! Author: Daniel Livingston, LANL
-      ! Date: 03/20/2018
       !
 
       implicit none
@@ -3698,9 +3622,6 @@ contains
       !
       ! Create two connectivity matrices for elements
       !
-      ! Author: Zhuolin Qu, LANL
-      ! Date: 08/21/2015
-      !
 
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscis.h"
@@ -3816,9 +3737,6 @@ contains
    subroutine GridWritePFLOTRAN(grid, rank, size)
       !
       ! Dumps all the information into PFLOTRAN input file
-      !
-      ! Author: Zhuolin Qu, LANL
-      ! Date: 08/10/2015
       !
 
 #include "petsc/finclude/petscvec.h"
