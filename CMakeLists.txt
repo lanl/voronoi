@@ -15,6 +15,7 @@ set(LIB ${CMAKE_SOURCE_DIR}/lib)
 
 # Find required 3rd party modules
 find_package(PkgConfig)
+
 pkg_search_module(PETSC PETSc>3.1.0 IMPORTED_TARGET REQUIRED)
 message(STATUS "Found PETSc ${PETSC_VERSION}")
 
@@ -22,7 +23,7 @@ find_package(HDF5 REQUIRED COMPONENTS Fortran HL)
 message(STATUS "Fortran compiler: ${CMAKE_Fortran_COMPILER}")
 
 add_definitions(${PETSC_DEFINITIONS})
-
+set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
 set(CMAKE_Fortran_MODULE_DIRECTORY ${LIB})
 
 add_executable(
@@ -37,11 +38,20 @@ add_executable(
 set_target_properties(
     ${EXE}
     PROPERTIES
-    LINKER_LANGUAGE Fortran
+    LINK_FLAGS "${MPI_LINK_FLAGS}"
 )
 
-set_target_properties(${EXE} PROPERTIES LINK_FLAGS "${MPI_LINK_FLAGS}")
-set_target_properties(${EXE} PROPERTIES Fortran_FORMAT "FREE")
+set_target_properties(
+    ${EXE}
+    PROPERTIES
+    Fortran_FORMAT "FREE"
+)
+
+set_target_properties(
+    ${EXE}
+    PROPERTIES
+    LINKER_LANGUAGE Fortran
+)
 
 target_link_libraries(
     ${EXE}
@@ -61,5 +71,3 @@ target_compile_options(
     PUBLIC
     ${PETSC_CFLAGS_OTHER}
 )
-
-set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
