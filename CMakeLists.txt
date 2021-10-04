@@ -47,7 +47,6 @@ add_executable(
     ${SRC}/voronoi_constants.F90
     ${SRC}/grid.F90
     ${SRC}/grid_aux.F90
-    ${SRC}/convert_accuracy.f95
 )
 
 set_target_properties(

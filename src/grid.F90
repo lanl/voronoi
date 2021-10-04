@@ -3172,6 +3172,7 @@ contains
       integer*8, allocatable :: map_8(:), indx_8(:)
       integer*8 :: N_8, i, j
 
+#ifdef LAGRIT
       allocate (map_8(N))
       allocate (values_8(N))
       allocate (indx_8(N))
@@ -3212,6 +3213,9 @@ contains
       deallocate (map_8)
       deallocate (values_8)
       deallocate (indx_8)
+#else
+      print*, 'WARNING: Requires LaGriT to proceed. Doing nothing.'
+#endif
 
    end subroutine CompressCoefficients
 
@@ -3664,7 +3668,7 @@ contains
 
             call ISCreateGeneral(PETSC_COMM_SELF, 1, (/a1 - 1/), PETSC_COPY_VALUES, irow1, ierr); CHKERRQ(ierr)
             call ISCreateGeneral(PETSC_COMM_SELF, 1, (/b1 - 1/), PETSC_COPY_VALUES, icol1, ierr); CHKERRQ(ierr)
-            call MatGetSubMatrices(grid%conn1, 1, irow1, icol1, MAT_INITIAL_MATRIX, submat1, ierr); CHKERRQ(ierr)
+            call MatCreateSubMatrices(grid%conn1, 1, irow1, icol1, MAT_INITIAL_MATRIX, submat1, ierr); CHKERRQ(ierr)
             call MatGetValues(submat1, 1, (/0/), 1, (/0/), v1, ierr); CHKERRQ(ierr)
             call ISDestroy(irow1, ierr); CHKERRQ(ierr)
             call ISDestroy(icol1, ierr); CHKERRQ(ierr)
@@ -3680,7 +3684,7 @@ contains
 
             call ISCreateGeneral(PETSC_COMM_SELF, 1, (/a2 - 1/), PETSC_COPY_VALUES, irow2, ierr); CHKERRQ(ierr)
             call ISCreateGeneral(PETSC_COMM_SELF, 1, (/b2 - 1/), PETSC_COPY_VALUES, icol2, ierr); CHKERRQ(ierr)
-            call MatGetSubMatrices(grid%conn1, 1, irow2, icol2, MAT_INITIAL_MATRIX, submat2, ierr); CHKERRQ(ierr)
+            call MatCreateSubMatrices(grid%conn1, 1, irow2, icol2, MAT_INITIAL_MATRIX, submat2, ierr); CHKERRQ(ierr)
             call MatGetValues(submat2, 1, (/0/), 1, (/0/), v2, ierr); CHKERRQ(ierr)
 
             if (int(v2(1)) == 0) then
@@ -3696,7 +3700,7 @@ contains
 
             call ISCreateGeneral(PETSC_COMM_SELF, 1, (/a3 - 1/), PETSC_COPY_VALUES, irow3, ierr); CHKERRQ(ierr)
             call ISCreateGeneral(PETSC_COMM_SELF, 1, (/b3 - 1/), PETSC_COPY_VALUES, icol3, ierr); CHKERRQ(ierr)
-            call MatGetSubMatrices(grid%conn1, 1, irow3, icol3, MAT_INITIAL_MATRIX, submat3, ierr); CHKERRQ(ierr)
+            call MatCreateSubMatrices(grid%conn1, 1, irow3, icol3, MAT_INITIAL_MATRIX, submat3, ierr); CHKERRQ(ierr)
             call MatGetValues(submat3, 1, (/0/), 1, (/0/), v3, ierr); CHKERRQ(ierr)
 
             if (int(v3(1)) == 0) then
@@ -3714,9 +3718,9 @@ contains
 
             call ISCreateGeneral(PETSC_COMM_SELF, 0, (/1/), PETSC_COPY_VALUES, irow1, ierr); CHKERRQ(ierr)
             call ISCreateGeneral(PETSC_COMM_SELF, 0, (/1/), PETSC_COPY_VALUES, icol1, ierr); CHKERRQ(ierr)
-            call MatGetSubMatrices(grid%conn1, 1, irow1, icol1, MAT_INITIAL_MATRIX, submat1, ierr); CHKERRQ(ierr)
-            call MatGetSubMatrices(grid%conn1, 1, irow1, icol1, MAT_INITIAL_MATRIX, submat2, ierr); CHKERRQ(ierr)
-            call MatGetSubMatrices(grid%conn1, 1, irow1, icol1, MAT_INITIAL_MATRIX, submat3, ierr); CHKERRQ(ierr)
+            call MatCreateSubMatrices(grid%conn1, 1, irow1, icol1, MAT_INITIAL_MATRIX, submat1, ierr); CHKERRQ(ierr)
+            call MatCreateSubMatrices(grid%conn1, 1, irow1, icol1, MAT_INITIAL_MATRIX, submat2, ierr); CHKERRQ(ierr)
+            call MatCreateSubMatrices(grid%conn1, 1, irow1, icol1, MAT_INITIAL_MATRIX, submat3, ierr); CHKERRQ(ierr)
             call ISDestroy(irow1, ierr); CHKERRQ(ierr)
             call ISDestroy(icol1, ierr); CHKERRQ(ierr)
 
