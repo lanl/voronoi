@@ -39,17 +39,7 @@ set_target_properties(
     ${EXE}
     PROPERTIES
     LINK_FLAGS "${MPI_LINK_FLAGS}"
-)
-
-set_target_properties(
-    ${EXE}
-    PROPERTIES
     Fortran_FORMAT "FREE"
-)
-
-set_target_properties(
-    ${EXE}
-    PROPERTIES
     LINKER_LANGUAGE Fortran
 )
 
