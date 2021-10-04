@@ -2,39 +2,36 @@ cmake_minimum_required(VERSION 3.1)
 project(VORONOI LANGUAGES Fortran)
 set(VERSION 1.0.0)
 
-#set(CMAKE_CXX_COMPILER ${PETSC_DIR}/${PETSC_ARCH}/bin/mpicxx)
-#set(CMAKE_C_COMPILER ${PETSC_DIR}/${PETSC_ARCH}/bin/mpicc)
+# Set environment variables
+set(CMAKE_PREFIX_PATH ${PETSC_DIR}/${PETSC_ARCH})
 set(CMAKE_Fortran_COMPILER ${PETSC_DIR}/${PETSC_ARCH}/bin/mpif90)
-
-# Set compiler flags 
 set(CMAKE_Fortran_FLAGS "-fcray-pointer")
 
-find_package(PkgConfig)
-pkg_search_module(PETSC PETSc>3.5.0 IMPORTED_TARGET REQUIRED)
-message(STATUS "Found PETSc ${PETSC_VERSION}")
-
-find_package(HDF5 REQUIRED COMPONENTS Fortran HL)
-
-message(STATUS "Fortran compiler: ${CMAKE_Fortran_COMPILER}")
-
-add_definitions(${PETSC_DEFINITIONS})
-
-# -D CMAKE_C_COMPILER=${PETSC_DIR}/${PETSC_ARCH}/bin/mpicc
-
+# Set source and target paths
 set(EXE voronoi)
 set(SRC ${CMAKE_SOURCE_DIR}/src)
 set(BIN ${CMAKE_SOURCE_DIR}/bin)
 set(LIB ${CMAKE_SOURCE_DIR}/lib)
 
+# Find required 3rd party modules
+find_package(PkgConfig)
+pkg_search_module(PETSC PETSc>3.1.0 IMPORTED_TARGET REQUIRED)
+message(STATUS "Found PETSc ${PETSC_VERSION}")
+
+find_package(HDF5 REQUIRED COMPONENTS Fortran HL)
+message(STATUS "Fortran compiler: ${CMAKE_Fortran_COMPILER}")
+
+add_definitions(${PETSC_DEFINITIONS})
+
 set(CMAKE_Fortran_MODULE_DIRECTORY ${LIB})
 
 add_executable(
     ${EXE}
-    ${SRC}/voronoi.F90
-    ${SRC}/voronoi_constants.F90
-    ${SRC}/grid.F90
-    ${SRC}/grid_aux.F90
-    ${SRC}/convert_accuracy.f95
+    ${SRC}/main.f90
+    ${SRC}/core/constants.f90
+    ${SRC}/core/Grid.f90
+    ${SRC}/core/convert_accuracy.f90
+    ${SRC}/compute/grid.F90
 )
 
 set_target_properties(
@@ -43,8 +40,8 @@ set_target_properties(
     LINKER_LANGUAGE Fortran
 )
 
-set_target_properties(${EXE} PROPERTIES LINK_FLAGS "${MPI_LINK_FLAGS}" )
-set_target_properties(${EXE} PROPERTIES Fortran_FORMAT "FREE" )
+set_target_properties(${EXE} PROPERTIES LINK_FLAGS "${MPI_LINK_FLAGS}")
+set_target_properties(${EXE} PROPERTIES Fortran_FORMAT "FREE")
 
 target_link_libraries(
     ${EXE}
@@ -67,8 +64,3 @@ target_compile_options(
 
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
 
-#INSTALL(${EXE} ${FOOEXE} RUNTIME DESTINATION bin)
-
-#include_directories(${PETSC_INCLUDES})
-#set(CMAKE_C_FLAGS_INIT "")
-#set(CMAKE_C_FLAGS_DEBUG_INIT "-g")
