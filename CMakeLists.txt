@@ -43,10 +43,12 @@ set(CMAKE_Fortran_MODULE_DIRECTORY ${LIB})
 
 add_executable(
     ${EXE}
-    ${SRC}/voronoi.F90
+    ${SRC}/main.F90
     ${SRC}/voronoi_constants.F90
     ${SRC}/grid.F90
     ${SRC}/grid_aux.F90
+    ${SRC}/apertures.F90
+    ${SRC}/core.F90
 )
 
 set_target_properties(

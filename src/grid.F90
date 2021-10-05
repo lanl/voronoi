@@ -7,6 +7,8 @@ module Grid_module
 
    use Grid_Aux_module
    use Voronoi_Constants_module
+   use VoronoiApertures
+   use VoronoiGridCore
 
    implicit none
 
@@ -3993,7 +3995,7 @@ contains
          deallocate (pos_edge)
       endif
 
-      ! GAther the data to io_rank
+      ! Gather the data to io_rank
       call MPI_Gatherv(data_local_real, grid%num_pts_local*5 + rec_local_tri*3 + 2, &
                        MPI_DOUBLE_PRECISION, data_global_real, sendcounts, &
                        pos, MPI_DOUBLE_PRECISION, io_rank, &
