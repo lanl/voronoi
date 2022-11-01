@@ -19,7 +19,7 @@ toc = true
 
 ### Build steps ###
 
-**1.0.** Ensure that all required dependencies are fulfilled.
+**1.0**. Ensure that all required dependencies are fulfilled.
 
 ### Building PETSc ###
 

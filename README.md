@@ -30,6 +30,18 @@ Cross-platform & open source
 
 ### Building ###
 
+Clone the repository and submodules with:
+
+```sh
+git clone --recurse-submodules git@github.com:lanl/voronoi.git
+```
+
+*Note:* If you don't clone with `--recurse-submodules`, run this command to clone the submodules:
+
+```sh
+git submodule update --init
+```
+
 For building instructions, see the [Build page](https://lanl.github.io/voronoi/docs/building/) or repo pages at [voronoi/docs/content/docs/](https://github.com/lanl/voronoi/tree/master/docs/content/docs)
 
 ### License ###
