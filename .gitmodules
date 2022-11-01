@@ -1,3 +1,6 @@
 [submodule "petsc"]
 	path = imported/petsc
 	url = https://gitlab.com/petsc/petsc.git
+[submodule "imported/LaGriT"]
+	path = imported/LaGriT
+	url = https://github.com/lanl/LaGriT.git
