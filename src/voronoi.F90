@@ -53,8 +53,10 @@ program voronoi
    call PetscOptionsGetString(PETSC_NULL_OPTIONS, PETSC_NULL_CHARACTER, '-avs', &
                               grid%avs_str, grid%avs_flag, ierr); CHKERRQ(ierr)
 
+#if defined(ENABLE_LAGRIT)
    call PetscOptionsGetString(PETSC_NULL_OPTIONS, PETSC_NULL_CHARACTER, '-lg', &
                               grid%lg_str, grid%lg_flag, ierr); CHKERRQ(ierr)
+#endif
 
    call PetscOptionsGetString(PETSC_NULL_OPTIONS, PETSC_NULL_CHARACTER, '-zone', &
                               grid%zone_str, grid%zone_flag, ierr); CHKERRQ(ierr)
@@ -144,10 +146,12 @@ program voronoi
          grid%is_tough = PETSC_TRUE
          grid%outtype = 2
          tmp_str = 'VORONOI_MESH'
+#if defined(ENABLE_HDF5)
       case ('hdf5')
          out_type = 4
          grid%outtype = 4
          tmp_str = 'voronoi.h5'
+#endif
       case default
          if (rank == io_rank) print *, 'UNKNOWN OUTPUT FLAG: DEFAULTING TO FEHM'
          out_type = 1

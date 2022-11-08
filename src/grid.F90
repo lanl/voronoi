@@ -21,7 +21,9 @@ module Grid_module
              CreateEdgeMatrix, &
              GridWriteFEHM, &
              GridWriteTOUGH2, &
+#if defined(ENABLE_HDF5)
              GridWriteHDF5, &
+#endif
              GridWritePFLOTRAN, &
              CreateConnMatrix, &
              ReadSTORFile, &
@@ -455,6 +457,7 @@ contains
          ! Check if LaGriT infile was passed
          if (grid%lg_flag .eqv. PETSC_TRUE) then
 
+#if defined(ENABLE_LAGRIT)
             if (grid%avs_flag .eqv. PETSC_TRUE) then
                print *, '\nWARNING: Both AVS and LaGriT infiles passed to Voronoi.'
                print *, '         Defaulting to LaGriT.\n'
@@ -499,7 +502,8 @@ contains
 
 #if DEBUG
             call dotask('mmprint; finish', ierror) ! LG memory info
-#endif
+#endif // DEBUG
+#endif // ENABLE_LAGRIT
          else
             length = len(trim(grid%avs_str))
             grid%ndim = ParseDimension(grid%avs_str, length)
@@ -1008,35 +1012,35 @@ contains
 
       call MatCreateAIJ(PETSC_COMM_WORLD, grid%num_pts_local, grid%num_pts_local, &
                         PETSC_DETERMINE, PETSC_DETERMINE, &
-                        PETSC_NULL_INTEGER, d_nnz, &
-                        PETSC_NULL_INTEGER, o_nnz, grid%adjmatrix, ierr); CHKERRQ(ierr)
+                        PETSC_DECIDE, d_nnz, &
+                        PETSC_DECIDE, o_nnz, grid%adjmatrix, ierr); CHKERRQ(ierr)
       call MatCreateAIJ(PETSC_COMM_WORLD, grid%num_pts_local, grid%num_pts_local, &
                         PETSC_DETERMINE, PETSC_DETERMINE, &
-                        PETSC_NULL_INTEGER, d_nnz2, &
-                        PETSC_NULL_INTEGER, o_nnz2, grid%edgematrix, ierr); CHKERRQ(ierr)
+                        PETSC_DECIDE, d_nnz2, &
+                        PETSC_DECIDE, o_nnz2, grid%edgematrix, ierr); CHKERRQ(ierr)
       call MatCreateAIJ(PETSC_COMM_WORLD, grid%num_pts_local, grid%num_pts_local, &
                         PETSC_DETERMINE, PETSC_DETERMINE, &
-                        PETSC_NULL_INTEGER, d_nnz2, &
-                        PETSC_NULL_INTEGER, o_nnz2, grid%adjmatrix_full, ierr); CHKERRQ(ierr)
+                        PETSC_DECIDE, d_nnz2, &
+                        PETSC_DECIDE, o_nnz2, grid%adjmatrix_full, ierr); CHKERRQ(ierr)
       call MatCreateAIJ(PETSC_COMM_WORLD, grid%num_pts_local, grid%num_pts_local, &
                         PETSC_DETERMINE, PETSC_DETERMINE, &
-                        PETSC_NULL_INTEGER, d_nnz2, &
-                        PETSC_NULL_INTEGER, o_nnz2, grid%connectivity, ierr); CHKERRQ(ierr)
+                        PETSC_DECIDE, d_nnz2, &
+                        PETSC_DECIDE, o_nnz2, grid%connectivity, ierr); CHKERRQ(ierr)
       call MatCreateAIJ(PETSC_COMM_WORLD, grid%num_pts_local, grid%num_pts_local, &
                         PETSC_DETERMINE, PETSC_DETERMINE, &
-                        PETSC_NULL_INTEGER, d_nnz2, &
-                        PETSC_NULL_INTEGER, o_nnz2, grid%connect_area, ierr); CHKERRQ(ierr)
+                        PETSC_DECIDE, d_nnz2, &
+                        PETSC_DECIDE, o_nnz2, grid%connect_area, ierr); CHKERRQ(ierr)
 
       ! TOUGH2
       !if ((grid%is_tough .EQV. PETSC_TRUE) .OR. (atts%are_on)) then
       call MatCreateAIJ(PETSC_COMM_WORLD, grid%num_pts_local, grid%num_pts_local, &
                         PETSC_DETERMINE, PETSC_DETERMINE, &
-                        PETSC_NULL_INTEGER, d_nnz, &
-                        PETSC_NULL_INTEGER, o_nnz, grid%adjmatrix_area, ierr); CHKERRQ(ierr)
+                        PETSC_DECIDE, d_nnz, &
+                        PETSC_DECIDE, o_nnz, grid%adjmatrix_area, ierr); CHKERRQ(ierr)
       call MatCreateAIJ(PETSC_COMM_WORLD, grid%num_pts_local, grid%num_pts_local, &
                         PETSC_DETERMINE, PETSC_DETERMINE, &
-                        PETSC_NULL_INTEGER, d_nnz, &
-                        PETSC_NULL_INTEGER, o_nnz, grid%adjmatrix_len, ierr); CHKERRQ(ierr)
+                        PETSC_DECIDE, d_nnz, &
+                        PETSC_DECIDE, o_nnz, grid%adjmatrix_len, ierr); CHKERRQ(ierr)
 
       ! TODO: FIX!!!
       call MatSetOption(grid%adjmatrix_area, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE, ierr); CHKERRQ(ierr)
@@ -1815,27 +1819,27 @@ contains
 
       use petscvec
       use petscmat
+
       implicit none
 
-      type(grid_type) :: grid
-      PetscInt :: i, j, ncols
-      PetscInt :: idx, rank, istart, iend, istart_mat1, istart_mat2, iend_mat
-      PetscInt :: zero = 0, one = 1
-      PetscScalar :: azero = 0
-      PetscInt, allocatable :: cols(:)
+      type(grid_type)          :: grid
+      PetscInt                 :: i, j, ncols
+      PetscInt                 :: idx, rank, istart, iend, istart_mat1, istart_mat2, iend_mat
+      PetscScalar              :: zero = 0, one = 1
+      PetscInt,    allocatable :: cols(:)
       PetscScalar, allocatable :: vals(:), temp_cols(:), temp_vals(:)
-      PetscErrorCode :: ierr
-      PetscScalar :: temp
-      PetscReal :: max_degree
+      PetscErrorCode           :: ierr
+      PetscScalar              :: temp
+      PetscReal                :: max_degree
 
       call VecCreateMPI(PETSC_COMM_WORLD, grid%num_pts_local, grid%num_pts_global, grid%degree, ierr); CHKERRQ(ierr)
-      call VecSet(grid%degree, azero, ierr); CHKERRQ(ierr)
+      call VecSet(grid%degree, zero, ierr); CHKERRQ(ierr)
       call VecMax(grid%connections, PETSC_NULL_INTEGER, max_degree, ierr); CHKERRQ(ierr)
       call VecDestroy(grid%connections, ierr); CHKERRQ(ierr)
 
       ! Create the 'mapping' vector: each element at index i represents the count of connections for element i
       call VecCreateMPI(PETSC_COMM_WORLD, grid%num_pts_local, grid%num_pts_global, grid%connect_map, ierr); CHKERRQ(ierr)
-      call VecSet(grid%connect_map, azero, ierr); CHKERRQ(ierr)
+      call VecSet(grid%connect_map, zero, ierr); CHKERRQ(ierr)
       call VecGetOwnershipRange(grid%connect_map, istart, iend, ierr); CHKERRQ(ierr)
       call MatGetOwnershipRange(grid%connectivity, istart_mat1, iend_mat, ierr); CHKERRQ(ierr)
       call MatGetOwnershipRange(grid%connectivity, istart_mat2, iend_mat, ierr); CHKERRQ(ierr)
@@ -1872,31 +1876,45 @@ contains
 
          ! Store the connectivity graph (i->(j_1,...,j_N))
          ! Each row i corresponds to Voronoi cell i, and each column j is the connection between cell i and cell j
-         !call MatSetValues(grid%connectivity,one,(/i-1/),ncols,(/(j,j=1,ncols)/),temp_cols,INSERT_VALUES,ierr);CHKERRQ(ierr)
-         call MatSetValues(grid%connectivity, one, (/i - 1/) + istart_mat1, ncols, &
+         call MatSetValues(grid%connectivity, 1, (/i - 1/) + istart_mat1, ncols, &
                            (/(j, j=1, ncols)/), temp_cols, INSERT_VALUES, ierr); CHKERRQ(ierr)
 
          ! Store the area of the connectivity (i->(j_1,...,j_N))
          ! Each row i corresponds to Voronoi cell i, and each column j is the Voronoi area orthogonal to connection i->j
-         !call MatSetValues(grid%connect_area,one,(/i-1/),ncols,(/(j,j=1,ncols)/),temp_vals,INSERT_VALUES,ierr);CHKERRQ(ierr)
-         call MatSetValues(grid%connect_area, one, (/i - 1/) + istart_mat2, ncols, &
+         call MatSetValues(grid%connect_area, 1, (/i - 1/) + istart_mat2, ncols, &
                            (/(j, j=1, ncols)/), temp_vals, INSERT_VALUES, ierr); CHKERRQ(ierr)
 
          ! Store the number of connections for element i, in vector element i
          call VecSetValue(grid%connect_map, (i - 1) + istart, temp, INSERT_VALUES, ierr); CHKERRQ(ierr)
          call VecSetValue(grid%degree, grid%vertex_ids(i) - 1, temp, ADD_VALUES, ierr); CHKERRQ(ierr)
-         call MatSetValues(grid%edgematrix, one, grid%vertex_ids(i) - 1, ncols, cols(1:ncols), temp_cols, INSERT_VALUES, ierr); CHKERRQ(ierr)
-         call MatSetValues(grid%adjmatrix_full, one, grid%vertex_ids(i) - 1, ncols, cols(1:ncols), temp_vals, INSERT_VALUES, ierr); CHKERRQ(ierr)
+         call MatSetValues(grid%edgematrix, 1, grid%vertex_ids(i) - 1, ncols, cols(1:ncols), temp_cols, INSERT_VALUES, ierr); CHKERRQ(ierr)
+         call MatSetValues(grid%adjmatrix_full, 1, grid%vertex_ids(i) - 1, ncols, cols(1:ncols), temp_vals, INSERT_VALUES, ierr); CHKERRQ(ierr)
 
          temp_cols = int(grid%vertex_ids(i))
 
          ! make a symmetric matrix with zero diagonal
-         call MatSetValues(grid%edgematrix, ncols - 1, cols(2:ncols), one, &
-                           grid%vertex_ids(i) - 1, temp_cols(2:ncols), INSERT_VALUES, ierr); CHKERRQ(ierr)
-         call MatSetValues(grid%adjmatrix_full, ncols - 1, cols(2:ncols), one, &
-                           grid%vertex_ids(i) - 1, temp_vals(2:ncols), INSERT_VALUES, ierr); CHKERRQ(ierr)
-         call MatSetValue(grid%adjmatrix_full, grid%vertex_ids(i) - 1, &
-                          grid%vertex_ids(i) - 1, zero, INSERT_VALUES, ierr); CHKERRQ(ierr)
+         call MatSetValues(grid%edgematrix,        &
+                           ncols - 1,              &
+                           cols(2:ncols),          &
+                           1,                      &
+                           grid%vertex_ids(i) - 1, &
+                           temp_cols(2:ncols),     &
+                           INSERT_VALUES,          &
+                           ierr); CHKERRQ(ierr)
+         call MatSetValues(grid%adjmatrix_full,    &
+                           ncols - 1,              &
+                           cols(2:ncols),          &
+                           1,                      &
+                           grid%vertex_ids(i) - 1, &
+                           temp_vals(2:ncols),     &
+                           INSERT_VALUES,          &
+                           ierr); CHKERRQ(ierr)
+         call MatSetValue(grid%adjmatrix_full,     &
+                          grid%vertex_ids(i) - 1,  &
+                          grid%vertex_ids(i) - 1,  &
+                          zero,                    &
+                          INSERT_VALUES,           &
+                          ierr); CHKERRA(ierr)
 
          ! TOUGH2
          if (grid%is_tough .EQV. PETSC_TRUE) then
@@ -1952,7 +1970,7 @@ contains
 ! calculate the grid%degree_tot based on grid%edgematrix
 
       call VecCreateMPI(PETSC_COMM_WORLD, grid%num_pts_local, grid%num_pts_global, grid%degree_tot, ierr); CHKERRQ(ierr)
-      call VecSet(grid%degree_tot, azero, ierr); CHKERRQ(ierr)
+      call VecSet(grid%degree_tot, zero, ierr); CHKERRQ(ierr)
 
       do i = 1, grid%num_pts_local
          call MatGetRow(grid%edgematrix, grid%vertex_ids(i) - 1, ncols, PETSC_NULL_INTEGER, PETSC_NULL_SCALAR, ierr); CHKERRQ(ierr)
@@ -2348,6 +2366,7 @@ contains
 
 !**************************************************************************
 
+#if defined(ENABLE_HDF5)
    subroutine GridWriteHDF5(grid, rank, size)
 
       ! Writes out mesh to a compressed HDF5 file format.
@@ -2662,6 +2681,7 @@ contains
       endif
 
    end subroutine GridWriteHDF5
+#endif // ENABLE_HDF5
 
 !**************************************************************************
 

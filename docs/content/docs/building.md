@@ -11,11 +11,32 @@ toc = true
 
 ### Required software ###
 
+**Tools:**
+
 * Fortran 95 compiler (`gfortran > 4.0; ifort >= 14`)
 * C/C++ compiler (`gcc; icc`)
 * git
 * make
 * Cmake >= 3.10.0
+
+**Libraries:**
+
+| Library | Version |
+|---------|---------|
+| PETSc   | 3.10    |
+| LaGriT  | 3.3.2   |
+
+Other versions of both may be used, but their compatibility has not
+been verified.
+
+PETSc and LaGriT submodules are available under the `imported/` folder.
+If you did not clone with submodules (using `git clone --recurse-submodules ...`), then run the following:
+
+```sh
+git submodule update --init --recursive
+```
+
+PETSc and LaGriT will be cloned to `imported/`.
 
 ### Build steps ###
 
@@ -23,12 +44,17 @@ toc = true
 
 ### Building PETSc ###
 
-**2.0.** Clone and build PETsc, on the `xsdk-0.2.0` tag:
+**2.0. Clone and build PETsc.**
+
+The required recommended PETSc version is v3.18.1.
+
+If you are not using this repo's submodules, you may clone manually:
 
 ```sh
-git clone https://gitlab.com/petsc/petsc.git petsc
+git clone https://gitlab.com/petsc/petsc.git
 cd petsc
-git checkout xsdk-0.2.0
+git fetch --tags
+git checkout tags/v3.18.1
 ```
 
 **2.1.** Run `./configure` to configure the build with environment-specific settings. As an example,
@@ -86,7 +112,7 @@ export LAGRIT_DIR=$(pwd)/LaGriT/
 
 ### Building VORONOI ###
 
-**4.0.** First, LaGriT libraries must be compiled. Navigate into the `src/` directory 
+**4.0.** First, LaGriT libraries must be compiled. Navigate into the `src/` directory
 of the VORONOI repo and run
 
 ```sh
@@ -105,7 +131,7 @@ The executable will be built in the current working directory and will be named 
 
 ### Using the proper `mpiexec`
 
-When PETSc is compiled in step 2 above, the `mpiexec` binary that is built 
+When PETSc is compiled in step 2 above, the `mpiexec` binary that is built
 is what should be used to call VORONOI.
 
 This binary is found in `${PETSC_DIR}/${PETSC_ARCH}/bin/mpiexec`.
